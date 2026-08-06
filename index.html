@@ -79,21 +79,22 @@
   .p-kpi .kcard .klabel{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#b9c9db;margin-top:2px;}
   .p-kpi .kcard .ksub{font-size:10px;color:#7f93a8;}
 
-  .p-sections{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:22px 26px;}
-  .scard{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;background:#fbfcfe;}
-  .scard .shead{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-  .scard .sbadge{width:26px;height:26px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:0 0 26px;}
+  .p-sections{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:22px 26px;align-items:stretch;}
+  .scard{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;background:#fbfcfe;height:100%;min-height:0;}
+  .scard .shead{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;min-height:48px;}
+  .scard .sbadge{width:26px;height:26px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:0 0 26px;margin-top:2px;}
+  .scard .shead .stext{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-start;}
   .scard .sicon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:0 0 34px;margin-left:auto;}
   .scard .sicon svg{width:19px;height:19px;stroke:#fff;}
-  .scard .stitle{font-size:12px;font-weight:700;line-height:1.2;}
-  .scard .ssub{font-size:10px;color:var(--muted);}
-  .scard ul{list-style:none;margin:6px 0;padding:0;flex:1;}
+  .scard .stitle{font-size:12px;font-weight:700;line-height:1.25;min-height:2.5em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .scard .ssub{font-size:10px;color:var(--muted);line-height:1.3;min-height:1.3em;margin-top:2px;}
+  .scard ul{list-style:none;margin:6px 0;padding:0;flex:1 1 auto;}
   .scard ul li{font-size:11.5px;padding:3px 0;border-top:1px dashed var(--line);display:flex;gap:6px;align-items:flex-start;}
   .scard ul li:first-child{border-top:none;}
-  .scard ul li:before{content:"✓";color:var(--green);font-weight:700;}
-  .scard .sfoot{margin-top:8px;border-top:2px solid var(--line);padding-top:6px;display:flex;justify-content:space-between;align-items:center;}
-  .scard .sfoot .fval{font-weight:800;font-size:16px;}
-  .scard .sfoot .flabel{font-size:9px;color:var(--muted);text-transform:uppercase;}
+  .scard ul li:before{content:"✓";color:var(--green);font-weight:700;flex:0 0 auto;}
+  .scard .sfoot{margin-top:auto;border-top:2px solid var(--line);padding-top:6px;display:flex;justify-content:space-between;align-items:center;gap:6px;min-height:36px;}
+  .scard .sfoot .fval{font-weight:800;font-size:14px;line-height:1.2;text-align:right;}
+  .scard .sfoot .flabel{font-size:9px;color:var(--muted);text-transform:uppercase;flex:0 0 auto;}
   .tag{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;color:#fff;}
 
   .p-chart{padding:10px 26px 26px;}
@@ -362,9 +363,9 @@
       <label>Select Project Type</label>
       <select id="projectTypeSelect" onchange="applyProjectType(this.value)">
         <option value="" selected>— Select a project type —</option>
-        <option value="steel">Steel Structure — Supply, Fabrication & Erection</option>
+        <option value="steel">Steel Structure — Supply, Fabrication &amp; Erection</option>
         <option value="steel_erection">Steel Structure — Erection Only</option>
-        <option value="steel_supply">Steel Structure — Supply & Fabrication Only</option>
+        <option value="steel_supply">Steel Structure — Supply &amp; Fabrication Only</option>
         <option value="electrical">Electrical &amp; Automation</option>
         <option value="integrated">Integrated (Steel + Electrical &amp; Automation)</option>
       </select>
@@ -569,6 +570,7 @@ Any steel sections or grades not specifically mentioned</textarea>
       <label style="display:flex;align-items:center;margin-top:8px;"><input type="checkbox" id="slideCost" checked onchange="applySlideSelection()" style="width:auto;margin-right:8px;">Cost Weighting (money by scope)</label>
       <label style="display:flex;align-items:center;margin-top:8px;"><input type="checkbox" id="slidePayment" checked onchange="applySlideSelection()" style="width:auto;margin-right:8px;">Payment Plan & Milestones</label>
       <button class="miniBtn" id="exportPdfBtn" style="background:var(--orange);width:100%;margin-top:12px;" onclick="exportSelectedPDF()">⬇ Export Selected to PDF</button>
+      <p class="hint" style="margin:8px 0 0;">On phones: if export fails or stays blank, use <b>Print / Save as PDF</b> below (works more reliably on iOS &amp; Android). Export works best on a computer.</p>
     </details>
 
     <button class="genBtn" onclick="render(); renderExtras();">⟳ Generate Dashboard</button>
@@ -2094,6 +2096,45 @@ function prepareForCapture(root){
   };
 }
 
+function isMobileDevice(){
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 1 && window.innerWidth < 900);
+}
+
+function downloadPdfBlob(pdf, filename){
+  try {
+    // Prefer blob + anchor (more reliable on iOS/Android than pdf.save)
+    const blob = pdf.output('blob');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){
+      try { document.body.removeChild(a); } catch(e){}
+      try { URL.revokeObjectURL(url); } catch(e){}
+    }, 2500);
+    // iOS Safari often ignores download — open in new tab as fallback
+    if(isMobileDevice()){
+      setTimeout(function(){
+        // If still on page, offer open
+        try {
+          const w = window.open(url, '_blank');
+          if(!w){
+            alert('PDF is ready. If it did not download, allow pop-ups or use «Print / Save as PDF» instead.');
+          }
+        } catch(e){}
+      }, 400);
+    }
+  } catch(err){
+    // Last resort
+    pdf.save(filename);
+  }
+}
+
 function exportSelectedPDF(){
   const map = [
     {id:'slideCover', el:'coverBlock'},
@@ -2109,27 +2150,44 @@ function exportSelectedPDF(){
 
   if(targets.length === 0){ alert('Tick at least one slide to export.'); return; }
 
+  if(typeof html2canvas === 'undefined' || !window.jspdf){
+    alert('PDF libraries did not load (need internet once). Use «Print / Save as PDF» instead.');
+    return;
+  }
+
   const btn = document.getElementById('exportPdfBtn');
   const origText = btn.textContent;
-  btn.textContent = '⏳ Building PDF...';
+  btn.textContent = isMobileDevice() ? '⏳ Building (phone)…' : '⏳ Building PDF...';
   btn.disabled = true;
 
+  const mobile = isMobileDevice();
+  // Phones: lower scale to avoid memory crash; fewer simultaneous pixels
+  const scale = mobile ? 1.25 : 2;
   const { jsPDF } = window.jspdf;
-  const pxToPt = px => px * 0.75; // 96dpi -> 72dpi
-  const margin = 24; // px, applied before conversion
+  const pxToPt = px => px * 0.75;
+  const margin = mobile ? 12 : 24;
   let pdf = null;
 
   let chain = Promise.resolve();
   targets.forEach((el, idx)=>{
     chain = chain.then(()=>{
+      // Scroll element into view so mobile browsers layout it fully
+      try { el.scrollIntoView({block:'nearest'}); } catch(e){}
       const restoreAll = prepareForCapture(el);
       return html2canvas(el, {
-        scale: 2,
+        scale: scale,
         backgroundColor: '#ffffff',
-        useCORS: true
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        windowWidth: el.scrollWidth,
+        windowHeight: el.scrollHeight
       }).then(canvas=>{
         restoreAll();
         return canvas;
+      }).catch(err=>{
+        restoreAll();
+        throw err;
       });
     }).then(canvas=>{
       const pageWpt = pxToPt(canvas.width + margin*2);
@@ -2140,24 +2198,30 @@ function exportSelectedPDF(){
       } else {
         pdf.addPage([pageWpt, pageHpt], orientation);
       }
-      pdf.addImage(
-        canvas.toDataURL('image/jpeg', 0.95), 'JPEG',
-        pxToPt(margin), pxToPt(margin),
-        pxToPt(canvas.width), pxToPt(canvas.height)
-      );
+      // JPEG is lighter on mobile memory than PNG
+      const img = canvas.toDataURL('image/jpeg', mobile ? 0.82 : 0.95);
+      pdf.addImage(img, 'JPEG', pxToPt(margin), pxToPt(margin), pxToPt(canvas.width), pxToPt(canvas.height));
+      // Help GC on phones
+      try { canvas.width = 0; canvas.height = 0; } catch(e){}
     });
   });
 
   chain.then(()=>{
     const projCode = (document.getElementById('projCode')||{}).value || 'project';
-    pdf.save(`${projCode.replace(/[^a-z0-9]+/gi,'_')}_execution_plan.pdf`);
+    const filename = `${projCode.replace(/[^a-z0-9]+/gi,'_')}_execution_plan.pdf`;
+    downloadPdfBlob(pdf, filename);
     btn.textContent = origText;
     btn.disabled = false;
+    if(mobile){
+      btn.textContent = '✓ PDF ready — check Downloads / new tab';
+      setTimeout(function(){ btn.textContent = origText; }, 4000);
+    }
   }).catch(err=>{
     console.error(err);
-    alert('PDF export failed: ' + err.message);
     btn.textContent = origText;
     btn.disabled = false;
+    const msg = (err && err.message) ? err.message : String(err);
+    alert('PDF export failed on this device.\\n\\nTip: select fewer slides, or use «Print / Save as PDF».\\n\\n' + msg);
   });
 }
 
@@ -2294,7 +2358,7 @@ function render(){
         <div class="scard">
           <div class="shead">
             <div class="sbadge" style="background:${s.color}">${s.num}</div>
-            <div><div class="stitle">${escapeHtml(s.title)}</div><div class="ssub">${escapeHtml(s.sub)}</div></div>
+            <div class="stext"><div class="stitle">${escapeHtml(s.title)}</div><div class="ssub">${escapeHtml(s.sub || '')}</div></div>
             <div class="sicon" style="background:${s.color}">${iconSvg(s.icon)}</div>
           </div>
           <ul>${s.items.map(it=>`<li>${escapeHtml(it)}</li>`).join('')}</ul>
