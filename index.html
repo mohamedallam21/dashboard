@@ -123,6 +123,10 @@
   .scope-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;}
   .scope-grid div{font-size:11px;display:flex;gap:5px;align-items:flex-start;}
   .scope-grid div:before{content:"✓";color:var(--green);font-weight:700;}
+  .excl-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:4px;}
+  .excl-grid div{font-size:11px;display:flex;gap:5px;align-items:flex-start;color:#5a3a3a;}
+  .excl-grid div:before{content:"✕";color:var(--orange);font-weight:700;}
+  .p-scope h4.excl-title{margin-top:14px;color:var(--orange);}
   .legend{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
   .legend span{font-size:10px;font-weight:700;color:#fff;padding:3px 9px;border-radius:5px;}
 
@@ -455,6 +459,15 @@ Sequence and Functional Tests
 Hot Commissioning
 Initial Production
 Performance Acceptance Tests</textarea>
+      <label>Exclusions Title</label>
+      <input type="text" id="exclTitle" value="EXCLUSIONS">
+      <label>Exclusions (one per line)</label>
+      <textarea id="exclItems">Supply of any mechanical equipment
+Any civil works
+Electricity and water source on site
+Any valves, gaskets, etc.
+Any special material not mentioned in our offer
+Any steel sections or grades not specifically mentioned</textarea>
       <label>Legend Roles (Label:Color, one per line — color = hex or name)</label>
       <textarea id="legendItems">Customer:#1f6fd6
 EAST:#861a22
@@ -662,6 +675,8 @@ const PROJECT_TYPE_PRESETS = {
     ],
     scopeTitle: "STRUCTURAL STEEL SCOPE INCLUDES",
     scopeItems: ["Shop Drawing Preparation & MTO","Steel Structure Supply & Fabrication","Cladding System Supply & Erection","Mechanical Scope per BOQ","Surface Treatment & Painting","Steel Structure Erection & Alignment","Bolted & Welded Connections","Quality Control Plan (100% Visual Testing)"],
+    exclusionsTitle: "EXCLUSIONS",
+    exclusions: ["Supply of any mechanical equipment","Electricity and water source on site","Any civil works","Any valves, gaskets, etc.","Any special material not mentioned in our offer","Any steel sections or steel grades not specifically mentioned in this offer"],
     noteText: "The manpower allocation, crane requirements and erection durations presented in this document are based on prior structural steel projects of similar scale and complexity.",
     kpis: [
       {label:"Peak Manpower", value:"92", sub:"Persons (M6–M7)", icon:"people"},
@@ -737,6 +752,8 @@ const PROJECT_TYPE_PRESETS = {
     contractValue: 1450000,
     scopeTitle: "ERECTION-ONLY SCOPE INCLUDES",
     scopeItems: ["Steel Structure Erection","Cladding System Installation (if applicable)","Method Statement, ITP & Lifting Plan","Visual Inspection & Bolt Tightening Check","Alignment & Level Check","Final Inspection Before Handover"],
+    exclusionsTitle: "EXCLUSIONS",
+    exclusions: ["Supply of any mechanical equipment","Any civil works","Supply of structural steel materials","Fabrication of steel structure","Surface treatment and painting (unless otherwise stated)","Any valves, gaskets, etc.","Any special material not mentioned in our offer","Any steel sections or steel grades not specifically mentioned in this offer","EAST shall not be responsible for delays resulting from unsafe site conditions"],
     noteText: "This offer covers erection and installation works only. Supply, fabrication, and surface treatment of the structural steel are excluded and assumed to be delivered to site by others, in line with the Erection-Only commercial offer.",
     kpis: [
       {label:"Peak Manpower", value:"48", sub:"Persons (M4–M6)", icon:"people"},
@@ -809,6 +826,8 @@ const PROJECT_TYPE_PRESETS = {
     contractValue: 3100000,
     scopeTitle: "SUPPLY &amp; FABRICATION SCOPE INCLUDES",
     scopeItems: ["Shop Drawing Preparation &amp; MTO","Steel Structure Supply &amp; Fabrication","Cladding System Supply","Mechanical Scope per BOQ","Surface Treatment &amp; Painting (120 &mu;m DFT)","Marking, Packing &amp; Loading at EAST Facility","Quality Control Plan (100% Visual Testing)"],
+    exclusionsTitle: "EXCLUSIONS",
+    exclusions: ["Supply of any mechanical equipment","Any civil works","Any erection works","Any valves, gaskets, etc.","Any special material not mentioned in our offer","Any steel sections or steel grades not specifically mentioned in this offer"],
     noteText: "This offer covers supply and shop fabrication only. Erection, civil works, and any works at the project site are excluded, in line with the Supply & Fabrication-Only commercial offer. Goods are delivered Ex-Works / DDP client stores per the agreed delivery terms.",
     kpis: [
       {label:"Peak Manpower", value:"44", sub:"Persons (M3–M4)", icon:"people"},
@@ -878,6 +897,8 @@ const PROJECT_TYPE_PRESETS = {
     label: "Electrical & Automation",
     scopeTitle: "ELECTRICAL & AUTOMATION SCOPE INCLUDES",
     scopeItems: ["I/O Verification","Cable Tray & Cable Installation","Control Panel / MCC Installation","PLC / SCADA Configuration & Programming","Loop & Functional Testing","Cold & Hot Commissioning","Performance Acceptance Tests"],
+    exclusionsTitle: "EXCLUSIONS",
+    exclusions: ["Civil works and foundations","Mechanical equipment supply","Structural steel supply & fabrication","Process equipment not listed in BOQ","Client utilities (power, water, compressed air)","Any work outside the agreed electrical & automation scope"],
     noteText: "The manpower allocation, cabling quantities and commissioning durations presented in this document are based on prior electrical & automation projects of similar scale and complexity.",
     kpis: [
       {label:"Peak Manpower", value:"58", sub:"Persons (M9–M10)", icon:"people"},
@@ -953,6 +974,8 @@ PROJECT_TYPE_PRESETS.integrated = {
   label: "Integrated (Steel + Electrical & Automation)",
   scopeTitle: "COMMISSIONING SCOPE INCLUDES",
   scopeItems: ["I/O Verification","Cold Commissioning","Safety Interlock Tests","Sequence and Functional Tests","Hot Commissioning","Initial Production","Performance Acceptance Tests"],
+  exclusionsTitle: "EXCLUSIONS",
+  exclusions: ["Civil works beyond agreed interfaces","Any work outside the agreed steel + electrical & automation scope","Client utilities (power, water, compressed air) unless stated","Any special material not mentioned in our offer"],
   noteText: "The manpower allocation, equipment requirements and project durations presented in this document are based on prior integrated steel + electrical & automation projects of similar scale and complexity.",
   kpis: [
     {label:"Peak Manpower", value:"117", sub:"Persons (M6–M7)", icon:"people"},
@@ -1051,6 +1074,10 @@ function applyProjectType(type){
   const contractValueEl = document.getElementById('contractValue');
   if(scopeTitleEl) scopeTitleEl.value = preset.scopeTitle;
   if(scopeItemsEl) scopeItemsEl.value = preset.scopeItems.join('\n');
+  const exclTitleEl = document.getElementById('exclTitle');
+  const exclItemsEl = document.getElementById('exclItems');
+  if(exclTitleEl) exclTitleEl.value = preset.exclusionsTitle || 'EXCLUSIONS';
+  if(exclItemsEl) exclItemsEl.value = (preset.exclusions || []).join('\n');
   if(noteTextEl) noteTextEl.value = preset.noteText;
   if(projDurationEl) projDurationEl.value = manpower.length;
   if(covPlantTypeEl && preset.covPlantType){ covPlantTypeEl.value = preset.covPlantType; coverData.plantType = preset.covPlantType; }
@@ -1297,6 +1324,7 @@ let chartSettings = {
   showManDays:true, manDaysColor:"#1f6fd6",
   showCraneDays:true, craneDaysColor:"#f2994a"
 };
+let posterChartType = 'manpower';
 
 
 function el(tag, attrs, html){const e=document.createElement(tag); if(attrs) for(const k in attrs) e.setAttribute(k,attrs[k]); if(html!==undefined) e.innerHTML=html; return e;}
@@ -1914,6 +1942,10 @@ function renderExtras(){
   document.getElementById('chartsBlock').innerHTML = buildChartsBlock(totals);
   document.getElementById('costBlock').innerHTML = buildCostBlock();
   document.getElementById('paymentBlock').innerHTML = buildPaymentBlock();
+  // Keep main dashboard chart in sync when cost/payment data changes
+  if(posterChartType === 'cost' || posterChartType === 'payment' || posterChartType === 'manpower'){
+    render();
+  }
   return totals;
 }
 
@@ -1936,7 +1968,7 @@ function globalRename(){
   const re = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
   const rep = str => (str||'').replace(re, replaceWith);
 
-  ['legendItems','noteText','assumptions','scopeItems','scopeTitle','projTitle','projCode','covQuotation','covPlantType','covPreparedBy'].forEach(id=>{
+  ['legendItems','noteText','assumptions','scopeItems','scopeTitle','exclTitle','exclItems','projTitle','projCode','covQuotation','covPlantType','covPreparedBy'].forEach(id=>{
     const elm = document.getElementById(id);
     if(elm) elm.value = rep(elm.value);
   });
@@ -2129,6 +2161,8 @@ function render(){
   const assumptions = document.getElementById('assumptions').value.split('\n').filter(Boolean);
   const scopeTitle = document.getElementById('scopeTitle').value;
   const scopeItems = document.getElementById('scopeItems').value.split('\n').filter(Boolean);
+  const exclTitle = (document.getElementById('exclTitle')||{}).value || 'EXCLUSIONS';
+  const exclItems = ((document.getElementById('exclItems')||{}).value || '').split('\n').filter(Boolean);
   const legendItems = document.getElementById('legendItems').value.split('\n').filter(Boolean).map(l=>{
     const [label,color] = l.split(':'); return {label:label.trim(), color:(color||'#888').trim()};
   });
@@ -2154,6 +2188,69 @@ function render(){
   const areaD = pathD + ` L${points[points.length-1].x.toFixed(1)},${chartH} L${points[0].x.toFixed(1)},${chartH} Z`;
 
   const maxMonth = Math.max(...disciplines.map(d=>d.end), curveMonths.length);
+
+  // ---- dynamic main-dashboard chart (driven by posterChartType dropdown) ----
+  let posterChartHtml = '';
+  const chartType = (typeof posterChartType !== 'undefined' && posterChartType) ? posterChartType : 'manpower';
+  if(chartType === 'none'){
+    posterChartHtml = '';
+  } else if(chartType === 'payment'){
+    const currentDuration = Math.max(1, parseInt(projDuration, 10) || PAYMENT_BASE_DURATION);
+    let cum = 0;
+    const withAmt = (paymentMilestones || []).map(m=>{
+      const pct = Number(m.pct)||0;
+      cum += pct;
+      const scaledMonth = Math.round((Number(m.dueMonthBase)||0) / PAYMENT_BASE_DURATION * currentDuration);
+      const due = 'M' + scaledMonth + (m.duePlus ? '+' : '');
+      return {...m, pct, cumPct: cum, due};
+    });
+    const cumLabels = withAmt.map(m => m.due || m.label);
+    const titlePay = (UI_PHRASES['cumulativeCurve'] && UI_PHRASES['cumulativeCurve'][currentLang]) || 'Cumulative Payment Curve (% of Contract)';
+    posterChartHtml = withAmt.length ? `
+    <div class="p-chart">
+      <h3>${escapeHtml(titlePay)}</h3>
+      <div class="chartbox">
+        ${svgSCurve(withAmt.map(m=>m.cumPct), cumLabels, '#861A22', 1180, 200)}
+      </div>
+    </div>` : `
+    <div class="p-chart">
+      <h3>${escapeHtml(titlePay)}</h3>
+      <div class="chartbox" style="padding:24px;color:#6b7c8f;font-size:13px;">No payment milestones defined yet — add them in the Payment Plan section.</div>
+    </div>`;
+  } else if(chartType === 'cost'){
+    const items = (costItems || []).map(it=>({label:it.label, value:Number(it.amount)||0, color:it.color}));
+    const total = items.reduce((s,it)=>s+it.value,0);
+    const titleCost = (UI_PHRASES['shareOfBudget'] && UI_PHRASES['shareOfBudget'][currentLang]) || 'Cost / Budget Distribution';
+    posterChartHtml = items.length && total > 0 ? `
+    <div class="p-chart">
+      <h3>${escapeHtml(titleCost)}</h3>
+      <div class="chartbox" style="padding:16px 20px;">
+        ${svgDonut(items, 520, 280)}
+      </div>
+    </div>` : `
+    <div class="p-chart">
+      <h3>${escapeHtml(titleCost)}</h3>
+      <div class="chartbox" style="padding:24px;color:#6b7c8f;font-size:13px;">No cost items defined yet — add them in the Cost Weighting section.</div>
+    </div>`;
+  } else {
+    // default: manpower loading curve
+    posterChartHtml = `
+    <div class="p-chart">
+      <h3>${t('manpowerCurve')}</h3>
+      <div class="chartbox">
+        <svg viewBox="0 0 ${chartW} ${chartH+30}" width="100%" height="180">
+          <path d="${areaD}" fill="#0e9aa71a"></path>
+          <path d="${pathD}" fill="none" stroke="#0e9aa7" stroke-width="2.5"></path>
+          ${points.map(p=>`
+            <circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#0e9aa7"></circle>
+            <text x="${p.x}" y="${p.y-8}" font-size="10" text-anchor="middle" fill="#0d2b4e" font-weight="700">${p.value}</text>
+            <text x="${p.x}" y="${chartH+14}" font-size="9" text-anchor="middle" fill="#6b7c8f">${escapeHtml(p.month)}</text>
+            <text x="${p.x}" y="${chartH+25}" font-size="7.5" text-anchor="middle" fill="#9aa9b8">${escapeHtml(p.phase)}</text>
+          `).join('')}
+        </svg>
+      </div>
+    </div>`;
+  }
 
   const html = `
     <div class="p-header">
@@ -2187,21 +2284,7 @@ function render(){
         </div>`).join('')}
     </div>
 
-    <div class="p-chart">
-      <h3>${t('manpowerCurve')}</h3>
-      <div class="chartbox">
-        <svg viewBox="0 0 ${chartW} ${chartH+30}" width="100%" height="180">
-          <path d="${areaD}" fill="#0e9aa71a"></path>
-          <path d="${pathD}" fill="none" stroke="#0e9aa7" stroke-width="2.5"></path>
-          ${points.map(p=>`
-            <circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#0e9aa7"></circle>
-            <text x="${p.x}" y="${p.y-8}" font-size="10" text-anchor="middle" fill="#0d2b4e" font-weight="700">${p.value}</text>
-            <text x="${p.x}" y="${chartH+14}" font-size="9" text-anchor="middle" fill="#6b7c8f">${escapeHtml(p.month)}</text>
-            <text x="${p.x}" y="${chartH+25}" font-size="7.5" text-anchor="middle" fill="#9aa9b8">${escapeHtml(p.phase)}</text>
-          `).join('')}
-        </svg>
-      </div>
-    </div>
+    ${posterChartHtml}
 
     <div class="p-disc">
       <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--navy);">${t('disciplinePeriods')}</h3>
@@ -2224,6 +2307,8 @@ function render(){
       <div class="p-scope">
         <h4>${escapeHtml(scopeTitle)}</h4>
         <div class="scope-grid">${scopeItems.map(a=>`<div>${escapeHtml(a)}</div>`).join('')}</div>
+        ${exclItems.length ? `<h4 class="excl-title">${escapeHtml(exclTitle)}</h4>
+        <div class="excl-grid">${exclItems.map(a=>`<div>${escapeHtml(a)}</div>`).join('')}</div>` : ''}
         <div class="legend">${legendItems.map(l=>`<span style="background:${l.color}">${escapeHtml(l.label)}</span>`).join('')}</div>
       </div>
     </div>
@@ -2241,6 +2326,8 @@ PROJECT_TYPE_PRESETS.integrated = {
   label: "Integrated (Steel + Electrical & Automation)",
   scopeTitle: (document.getElementById('scopeTitle')||{}).value || "COMMISSIONING SCOPE INCLUDES",
   scopeItems: ((document.getElementById('scopeItems')||{}).value || "").split('\n').filter(Boolean),
+  exclusionsTitle: (document.getElementById('exclTitle')||{}).value || "EXCLUSIONS",
+  exclusions: ((document.getElementById('exclItems')||{}).value || "").split('\n').filter(Boolean),
   noteText: (document.getElementById('noteText')||{}).value || "",
   kpis: JSON.parse(JSON.stringify(kpis)),
   sections: JSON.parse(JSON.stringify(sections)),
