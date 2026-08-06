@@ -123,10 +123,26 @@
   .scope-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;}
   .scope-grid div{font-size:11px;display:flex;gap:5px;align-items:flex-start;}
   .scope-grid div:before{content:"✓";color:var(--green);font-weight:700;}
-  .excl-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:4px;}
-  .excl-grid div{font-size:11px;display:flex;gap:5px;align-items:flex-start;color:#5a3a3a;}
-  .excl-grid div:before{content:"✕";color:var(--orange);font-weight:700;}
-  .p-scope h4.excl-title{margin-top:14px;color:var(--orange);}
+  .p-exclusions{
+    margin:0 26px 18px;padding:14px 16px;border-radius:10px;
+    background:linear-gradient(135deg,#fdf6f6 0%,#faf7f7 100%);
+    border:1px solid #f0d4d6;border-left:4px solid var(--orange);
+  }
+  .p-exclusions h4{
+    margin:0 0 10px;font-size:12px;color:var(--orange);letter-spacing:.5px;
+    text-transform:uppercase;display:flex;align-items:center;gap:8px;
+  }
+  .p-exclusions h4 .excl-badge{
+    font-size:9px;font-weight:700;background:var(--orange);color:#fff;
+    padding:2px 8px;border-radius:10px;letter-spacing:.3px;
+  }
+  .excl-grid{display:flex;flex-wrap:wrap;gap:6px 8px;}
+  .excl-grid div{
+    font-size:11px;display:inline-flex;align-items:center;gap:5px;
+    color:#5a3a3a;background:#fff;border:1px solid #f0d4d6;
+    padding:5px 10px;border-radius:6px;line-height:1.3;
+  }
+  .excl-grid div:before{content:"✕";color:var(--orange);font-weight:700;font-size:10px;}
   .legend{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
   .legend span{font-size:10px;font-weight:700;color:#fff;padding:3px 9px;border-radius:5px;}
 
@@ -459,19 +475,24 @@ Sequence and Functional Tests
 Hot Commissioning
 Initial Production
 Performance Acceptance Tests</textarea>
+      <label>Legend Roles (Label:Color, one per line — color = hex or name)</label>
+      <textarea id="legendItems">Customer:#1f6fd6
+EAST:#861a22
+SAC:#383e42</textarea>
+    </details>
+
+    <details class="section" open>
+      <summary>🚫 Exclusions (per offer type)</summary>
+      <p class="hint" style="margin:0 0 8px;">These load automatically when you pick a Project Type (from EAST offer templates). Edit freely — they appear as a clean band on the main dashboard.</p>
       <label>Exclusions Title</label>
-      <input type="text" id="exclTitle" value="EXCLUSIONS">
-      <label>Exclusions (one per line)</label>
-      <textarea id="exclItems">Supply of any mechanical equipment
+      <input type="text" id="exclTitle" value="EXCLUSIONS" onchange="render();">
+      <label>Excluded Items (one per line)</label>
+      <textarea id="exclItems" onchange="render();">Supply of any mechanical equipment
 Any civil works
 Electricity and water source on site
 Any valves, gaskets, etc.
 Any special material not mentioned in our offer
 Any steel sections or grades not specifically mentioned</textarea>
-      <label>Legend Roles (Label:Color, one per line — color = hex or name)</label>
-      <textarea id="legendItems">Customer:#1f6fd6
-EAST:#861a22
-SAC:#383e42</textarea>
     </details>
 
     <details class="section">
@@ -2307,11 +2328,14 @@ function render(){
       <div class="p-scope">
         <h4>${escapeHtml(scopeTitle)}</h4>
         <div class="scope-grid">${scopeItems.map(a=>`<div>${escapeHtml(a)}</div>`).join('')}</div>
-        ${exclItems.length ? `<h4 class="excl-title">${escapeHtml(exclTitle)}</h4>
-        <div class="excl-grid">${exclItems.map(a=>`<div>${escapeHtml(a)}</div>`).join('')}</div>` : ''}
         <div class="legend">${legendItems.map(l=>`<span style="background:${l.color}">${escapeHtml(l.label)}</span>`).join('')}</div>
       </div>
     </div>
+    ${exclItems.length ? `
+    <div class="p-exclusions">
+      <h4>${escapeHtml(exclTitle)} <span class="excl-badge">${exclItems.length} items</span></h4>
+      <div class="excl-grid">${exclItems.map(a=>`<div>${escapeHtml(a)}</div>`).join('')}</div>
+    </div>` : ''}
   `;
   document.getElementById('poster').innerHTML = html;
   document.getElementById('coverBlock').innerHTML = buildCoverPage();
