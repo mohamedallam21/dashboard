@@ -383,13 +383,16 @@
     <input type="text" id="loginUser" autocomplete="username" placeholder="admin">
     <label>Password</label>
     <input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="loginBtn" type="button" onclick="doLogin()">Sign in</button>
+    <label>Project code (optional)</label>
+    <input type="text" id="loginProjectCode" placeholder="e.g. PT-2177 — opens that project after sign-in" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="loginBtn" type="button" onclick="doLogin()">Sign in &amp; open project</button>
     <div class="err" id="loginErr"></div>
     <div class="hintBox">
       <b>Default accounts</b> (change after first login)<br>
       Admin: <b>admin</b> / <b>admin123</b><br>
       Junior: <b>junior</b> / <b>junior123</b><br>
-      Data stays in this browser (IndexedDB). Export JSON to move projects.
+      Enter a <b>Project code</b> to open that saved offer right after login.<br>
+      Data stays in this browser (IndexedDB).
     </div>
   </div>
 </div>
@@ -468,7 +471,12 @@
       <summary>💾 Project History — Continue later</summary>
       <p class="hint" style="margin:0 0 8px;">Saved in the local database under your account. Admin can see all projects; Junior sees only their own. Export JSON to copy to another device.</p>
       <div id="historyStatus" style="font-size:11px;color:#9fc4ee;margin-bottom:8px;padding:6px 8px;background:#16181a;border-radius:6px;">Checking saved session…</div>
-      <label>Save name</label>
+      <label>Open by project code</label>
+      <div class="row2">
+        <div style="flex:1.4;"><input type="text" id="openProjectCode" placeholder="e.g. PT-2177" onkeydown="if(event.key==='Enter')openProjectByCode()"></div>
+        <button class="miniBtn" style="background:var(--teal);margin-top:0;flex:0.8;" onclick="openProjectByCode()">Open</button>
+      </div>
+      <label style="margin-top:12px;">Save name</label>
       <input type="text" id="historySaveName" placeholder="e.g. Egypt Lime Plant — Budget Offer">
       <div class="row2" style="margin-top:6px;">
         <button class="miniBtn" style="background:var(--teal);flex:1;margin-top:0;" onclick="saveNamedProject()">💾 Save / Update</button>
@@ -2662,6 +2670,7 @@ function updateUserBar(){
 async function doLogin(){
   const u = (document.getElementById('loginUser')||{}).value.trim().toLowerCase();
   const p = (document.getElementById('loginPass')||{}).value;
+  const code = ((document.getElementById('loginProjectCode')||{}).value || '').trim();
   const err = document.getElementById('loginErr');
   if(!u || !p){ if(err) err.textContent = 'Enter username and password.'; return; }
   try {
@@ -2675,11 +2684,80 @@ async function doLogin(){
     hideLogin();
     updateUserBar();
     await restoreOnLoad();
-    refreshHistoryList();
+    await refreshHistoryList();
+    // If project code entered on login → open that project
+    if(code){
+      const ok = await openProjectByCode(code, true);
+      if(!ok && err){ /* status already set */ }
+    }
   } catch(e){
     console.error(e);
     if(err) err.textContent = 'Login failed: ' + e.message;
   }
+}
+
+function normalizeProjectCode(code){
+  return String(code || '').trim().toLowerCase().replace(/\s+/g, '');
+}
+
+async function findProjectsByCode(code){
+  const norm = normalizeProjectCode(code);
+  if(!norm || !db) return [];
+  const all = await dbGetAll('projects');
+  return all.filter(p=>{
+    const pc = normalizeProjectCode(p.projectCode || (p.state && p.state.fields && p.state.fields.projCode) || '');
+    const name = String(p.name || '').toLowerCase();
+    return pc === norm || pc.indexOf(norm) >= 0 || name.indexOf(norm) >= 0;
+  });
+}
+
+/** Open project by code. silent=true skips alerts (used from login). Returns true if loaded. */
+async function openProjectByCode(codeArg, silent){
+  if(!currentUser || !db){
+    if(!silent) alert('Please sign in first.');
+    return false;
+  }
+  const input = document.getElementById('openProjectCode');
+  const code = (codeArg != null && codeArg !== true) ? String(codeArg) : ((input && input.value) || '');
+  const trimmed = String(code).trim();
+  if(!trimmed){
+    if(!silent) alert('Enter a project code (e.g. PT-2177).');
+    return false;
+  }
+  let matches = await findProjectsByCode(trimmed);
+  // Access filter: junior only own projects; admin all
+  if(currentUser.role !== 'admin'){
+    matches = matches.filter(p => p.ownerId === currentUser.id);
+  }
+  if(!matches.length){
+    updateHistoryStatus('No project found for code «' + trimmed + '»');
+    if(!silent) alert('No project found for code «' + trimmed + '».\n\nSave the offer first (Save / Update). The code is the Project Code field (e.g. PT-2177).');
+    return false;
+  }
+  // Prefer exact projectCode match
+  const norm = normalizeProjectCode(trimmed);
+  matches.sort((a,b)=>{
+    const ac = normalizeProjectCode(a.projectCode || (a.state && a.state.fields && a.state.fields.projCode) || '');
+    const bc = normalizeProjectCode(b.projectCode || (b.state && b.state.fields && b.state.fields.projCode) || '');
+    const ae = ac === norm ? 0 : 1;
+    const be = bc === norm ? 0 : 1;
+    if(ae !== be) return ae - be;
+    return (b.savedAt||'').localeCompare(a.savedAt||'');
+  });
+  const proj = matches[0];
+  currentHistoryId = proj.id;
+  applyState(proj.state);
+  const nameEl = document.getElementById('historySaveName');
+  if(nameEl) nameEl.value = proj.name || '';
+  if(input) input.value = trimmed;
+  await saveSessionNow();
+  updateHistoryStatus('Opened «' + (proj.name || trimmed) + '» (' + (proj.projectCode || trimmed) + ')');
+  // Scroll to dashboard
+  try {
+    const stage = document.querySelector('.stage');
+    if(stage) stage.scrollIntoView({behavior:'smooth', block:'start'});
+  } catch(e){}
+  return true;
 }
 
 function logoutUser(){
@@ -2905,9 +2983,12 @@ async function saveNamedProject(){
   state.name = name;
   if(!currentHistoryId) currentHistoryId = 'p_' + Date.now();
   state.historyId = currentHistoryId;
+  const projectCode = ((document.getElementById('projCode')||{}).value || '').trim();
+  state.projectCode = projectCode;
   const rec = {
     id: currentHistoryId,
     name: name,
+    projectCode: projectCode,
     ownerId: currentUser.id,
     ownerName: currentUser.username,
     savedAt: state.savedAt,
@@ -2968,7 +3049,7 @@ async function refreshHistoryList(){
         <span style="font-size:12px;color:#fff;font-weight:600;">${escapeHtml(p.name||'Untitled')}</span>
         <span style="font-size:10px;color:#7fa0c4;">${escapeHtml(formatWhen(p.savedAt))}</span>
       </div>
-      <div style="font-size:10px;color:#7f93a8;margin:4px 0;">by ${escapeHtml(p.ownerName||'—')}</div>
+      <div style="font-size:10px;color:#9fc4ee;margin:4px 0;">Code: <b style="color:#fff;">${escapeHtml(p.projectCode || (p.state && p.state.fields && p.state.fields.projCode) || '—')}</b> · by ${escapeHtml(p.ownerName||'—')}</div>
       <div class="row2" style="margin-top:4px;">
         <button class="miniBtn" style="background:var(--teal);margin-top:0;flex:1;" onclick="loadNamedProject('${p.id}')">Continue</button>
         <button class="miniBtn delBtn" style="margin-top:0;" onclick="deleteNamedProject('${p.id}')">Delete</button>
