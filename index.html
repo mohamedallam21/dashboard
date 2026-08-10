@@ -169,6 +169,52 @@
     .p-sections{grid-template-columns:repeat(2,1fr);}
   }
 
+
+  /* ---- Login gate + account bar ---- */
+  #loginGate{
+    position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(145deg,#1a1e22 0%,#2b3033 50%,#202426 100%);
+    font-family:inherit;
+  }
+  #loginGate.hidden{display:none !important;}
+  .loginCard{
+    width:min(400px,92vw);background:#fff;border-radius:16px;padding:28px 26px 22px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45);color:#1c2b3a;
+  }
+  .loginCard h2{margin:0 0 4px;font-size:20px;color:#202426;}
+  .loginCard .sub{font-size:12px;color:#6b7c8f;margin:0 0 18px;line-height:1.45;}
+  .loginCard label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#6b7c8f;margin:10px 0 4px;}
+  .loginCard input,.loginCard select{
+    width:100%;padding:10px 12px;border:1px solid #e1e7ee;border-radius:8px;font-size:14px;
+    background:#f8fafc;color:#1c2b3a;box-sizing:border-box;
+  }
+  .loginCard input:focus,.loginCard select:focus{outline:none;border-color:#0e9aa7;background:#fff;}
+  .loginCard .loginBtn{
+    width:100%;margin-top:16px;padding:12px;border:none;border-radius:8px;background:#861a22;color:#fff;
+    font-weight:700;font-size:14px;cursor:pointer;letter-spacing:.3px;
+  }
+  .loginCard .loginBtn:hover{background:#a3232e;}
+  .loginCard .err{color:#861a22;font-size:12px;margin-top:10px;min-height:16px;}
+  .loginCard .hintBox{
+    margin-top:14px;padding:10px 12px;background:#f4f6f9;border-radius:8px;font-size:11px;color:#6b7c8f;line-height:1.5;
+  }
+  .loginCard .hintBox b{color:#1c2b3a;}
+  .userBar{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+    background:#16181a;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:11px;color:#9fb2c6;
+  }
+  .userBar .ub-name{color:#fff;font-weight:700;}
+  .userBar .ub-role{
+    font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;color:#fff;text-transform:uppercase;letter-spacing:.4px;
+  }
+  .userBar .ub-role.admin{background:#861a22;}
+  .userBar .ub-role.junior{background:#0e9aa7;}
+  .userBar button{
+    background:#4a5256;border:none;color:#dce6f0;padding:4px 9px;border-radius:6px;font-size:11px;cursor:pointer;
+  }
+  .userBar button:hover{background:#5c6469;}
+  body.locked .app, body.locked .menuToggle, body.locked .editorEdgeGrip{visibility:hidden !important;pointer-events:none !important;}
+
   /* ---- swipeable left-side editor drawer, always pinned in view while scrolling ---- */
   .menuToggle{
     display:flex;position:fixed;top:50%;left:16px;z-index:1002;
@@ -325,7 +371,28 @@
 </head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<body>
+<body class="locked">
+
+
+<!-- ===== LOGIN GATE (local DB accounts) ===== -->
+<div id="loginGate">
+  <div class="loginCard">
+    <h2>Sign in</h2>
+    <p class="sub">Local database on this device — Admin manages users; Junior works on assigned offers.</p>
+    <label>Username</label>
+    <input type="text" id="loginUser" autocomplete="username" placeholder="admin">
+    <label>Password</label>
+    <input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="loginBtn" type="button" onclick="doLogin()">Sign in</button>
+    <div class="err" id="loginErr"></div>
+    <div class="hintBox">
+      <b>Default accounts</b> (change after first login)<br>
+      Admin: <b>admin</b> / <b>admin123</b><br>
+      Junior: <b>junior</b> / <b>junior123</b><br>
+      Data stays in this browser (IndexedDB). Export JSON to move projects.
+    </div>
+  </div>
+</div>
 
 <!-- menu open/close toggle + swipe helpers -->
 <button class="menuToggle" id="menuToggle" type="button" aria-label="Open menu">
@@ -344,7 +411,33 @@
     <div class="dragHandle" id="dragHandle">‹</div>
     <div class="editorInner">
     <h1>EXECUTION PLAN — DASHBOARD GENERATOR</h1>
-    <p class="hint">Fill in your project's numbers and text below, then click <b>Generate Dashboard</b>. Reuse this file for every new project — just clear the fields and re-enter fresh numbers.</p>
+    <div class="userBar" id="userBar">
+      <div>
+        <span class="ub-name" id="ubName">—</span>
+        <span class="ub-role junior" id="ubRole">junior</span>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button type="button" onclick="logoutUser()">Log out</button>
+      </div>
+    </div>
+    <p class="hint">Fill in your project's numbers and text below, then click <b>Generate Dashboard</b>. Work is saved per account in the local database.</p>
+
+    <details class="section" id="adminUsersSection" style="display:none;">
+      <summary>👑 Admin — User accounts</summary>
+      <p class="hint" style="margin:0 0 8px;">Create Junior or Admin accounts. Passwords are stored only on this device.</p>
+      <div id="usersList"></div>
+      <label style="margin-top:10px;">New username</label>
+      <input type="text" id="newUserName" placeholder="e.g. eng.ahmed">
+      <label>Password</label>
+      <input type="text" id="newUserPass" placeholder="min 4 characters">
+      <label>Role</label>
+      <select id="newUserRole">
+        <option value="junior">Junior</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button class="miniBtn" style="background:var(--teal);width:100%;margin-top:8px;" onclick="adminCreateUser()">+ Create user</button>
+    </details>
+
 
     <details class="section" open>
       <summary>🌐 Language</summary>
@@ -369,6 +462,28 @@
         <option value="electrical">Electrical &amp; Automation</option>
         <option value="integrated">Integrated (Steel + Electrical &amp; Automation)</option>
       </select>
+    </details>
+
+    <details class="section" open>
+      <summary>💾 Project History — Continue later</summary>
+      <p class="hint" style="margin:0 0 8px;">Saved in the local database under your account. Admin can see all projects; Junior sees only their own. Export JSON to copy to another device.</p>
+      <div id="historyStatus" style="font-size:11px;color:#9fc4ee;margin-bottom:8px;padding:6px 8px;background:#16181a;border-radius:6px;">Checking saved session…</div>
+      <label>Save name</label>
+      <input type="text" id="historySaveName" placeholder="e.g. Egypt Lime Plant — Budget Offer">
+      <div class="row2" style="margin-top:6px;">
+        <button class="miniBtn" style="background:var(--teal);flex:1;margin-top:0;" onclick="saveNamedProject()">💾 Save / Update</button>
+        <button class="miniBtn" style="background:#4a5256;flex:1;margin-top:0;" onclick="saveSessionNow()">⟳ Quick save</button>
+      </div>
+      <label style="margin-top:12px;">Saved projects</label>
+      <div id="historyList" style="max-height:180px;overflow-y:auto;"></div>
+      <div class="row2" style="margin-top:8px;">
+        <button class="miniBtn" style="flex:1;margin-top:0;" onclick="exportProjectJSON()">⬇ Export JSON</button>
+        <label class="miniBtn" style="flex:1;margin-top:0;text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+          ⬆ Import JSON
+          <input type="file" accept=".json,application/json" style="display:none;" onchange="importProjectJSON(this)">
+        </label>
+      </div>
+      <button class="miniBtn delBtn" style="width:100%;margin-top:8px;" onclick="clearCurrentSession()">🗑 Clear current session (start fresh)</button>
     </details>
 
     <details class="section" open>
@@ -1966,9 +2081,10 @@ function renderExtras(){
   document.getElementById('costBlock').innerHTML = buildCostBlock();
   document.getElementById('paymentBlock').innerHTML = buildPaymentBlock();
   // Keep main dashboard chart in sync when cost/payment data changes
-  if(posterChartType === 'cost' || posterChartType === 'payment' || posterChartType === 'manpower'){
+  if(!_restoring && (posterChartType === 'cost' || posterChartType === 'payment' || posterChartType === 'manpower')){
     render();
   }
+  if(!_restoring && typeof scheduleAutosave === 'function') scheduleAutosave();
   return totals;
 }
 
@@ -2409,6 +2525,566 @@ function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
+
+
+/* ---------- Local DB (IndexedDB) + Admin / Junior accounts ---------- */
+const DB_NAME = 'mep_dashboard_db';
+const DB_VERSION = 1;
+const AUTH_SESSION_KEY = 'mep_auth_session_v1';
+let db = null;
+let currentUser = null; // {id, username, role}
+let currentHistoryId = null;
+let _autosaveTimer = null;
+let _restoring = false;
+
+function openDB(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = function(e){
+      const database = e.target.result;
+      if(!database.objectStoreNames.contains('users')){
+        const us = database.createObjectStore('users', {keyPath:'id'});
+        us.createIndex('username', 'username', {unique:true});
+      }
+      if(!database.objectStoreNames.contains('projects')){
+        const ps = database.createObjectStore('projects', {keyPath:'id'});
+        ps.createIndex('ownerId', 'ownerId', {unique:false});
+        ps.createIndex('savedAt', 'savedAt', {unique:false});
+      }
+      if(!database.objectStoreNames.contains('sessions')){
+        database.createObjectStore('sessions', {keyPath:'userId'});
+      }
+    };
+    req.onsuccess = function(e){ resolve(e.target.result); };
+    req.onerror = function(e){ reject(e.target.error); };
+  });
+}
+
+function dbTx(store, mode){
+  const tx = db.transaction(store, mode);
+  return tx.objectStore(store);
+}
+
+function dbGet(store, key){
+  return new Promise((resolve, reject)=>{
+    const r = dbTx(store, 'readonly').get(key);
+    r.onsuccess = ()=> resolve(r.result);
+    r.onerror = ()=> reject(r.error);
+  });
+}
+
+function dbPut(store, value){
+  return new Promise((resolve, reject)=>{
+    const r = dbTx(store, 'readwrite').put(value);
+    r.onsuccess = ()=> resolve(r.result);
+    r.onerror = ()=> reject(r.error);
+  });
+}
+
+function dbDelete(store, key){
+  return new Promise((resolve, reject)=>{
+    const r = dbTx(store, 'readwrite').delete(key);
+    r.onsuccess = ()=> resolve();
+    r.onerror = ()=> reject(r.error);
+  });
+}
+
+function dbGetAll(store){
+  return new Promise((resolve, reject)=>{
+    const r = dbTx(store, 'readonly').getAll();
+    r.onsuccess = ()=> resolve(r.result || []);
+    r.onerror = ()=> reject(r.error);
+  });
+}
+
+function dbGetAllByIndex(store, indexName, value){
+  return new Promise((resolve, reject)=>{
+    const idx = dbTx(store, 'readonly').index(indexName);
+    const r = idx.getAll(value);
+    r.onsuccess = ()=> resolve(r.result || []);
+    r.onerror = ()=> reject(r.error);
+  });
+}
+
+async function sha256(textStr){
+  try {
+    if(window.crypto && crypto.subtle){
+      const data = new TextEncoder().encode(textStr);
+      const buf = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+  } catch(e){}
+  // Fallback for file:// or old browsers (not cryptographic — local use only)
+  let h = 2166136261;
+  for(let i=0;i<textStr.length;i++){ h ^= textStr.charCodeAt(i); h = Math.imul(h, 16777619); }
+  let h2 = 5381;
+  for(let i=0;i<textStr.length;i++){ h2 = ((h2<<5)+h2) ^ textStr.charCodeAt(i); }
+  return ('local_' + (h>>>0).toString(16) + '_' + (h2>>>0).toString(16));
+}
+
+async function ensureDefaultUsers(){
+  const users = await dbGetAll('users');
+  if(users.length) return;
+  const adminHash = await sha256('admin123');
+  const juniorHash = await sha256('junior123');
+  await dbPut('users', {id:'u_admin', username:'admin', passHash:adminHash, role:'admin', createdAt:new Date().toISOString()});
+  await dbPut('users', {id:'u_junior', username:'junior', passHash:juniorHash, role:'junior', createdAt:new Date().toISOString()});
+}
+
+function showLogin(){
+  document.body.classList.add('locked');
+  const gate = document.getElementById('loginGate');
+  if(gate) gate.classList.remove('hidden');
+  const err = document.getElementById('loginErr');
+  if(err) err.textContent = '';
+}
+
+function hideLogin(){
+  document.body.classList.remove('locked');
+  const gate = document.getElementById('loginGate');
+  if(gate) gate.classList.add('hidden');
+}
+
+function updateUserBar(){
+  if(!currentUser) return;
+  const n = document.getElementById('ubName');
+  const r = document.getElementById('ubRole');
+  if(n) n.textContent = currentUser.username;
+  if(r){
+    r.textContent = currentUser.role;
+    r.className = 'ub-role ' + (currentUser.role === 'admin' ? 'admin' : 'junior');
+  }
+  const adm = document.getElementById('adminUsersSection');
+  if(adm) adm.style.display = currentUser.role === 'admin' ? '' : 'none';
+  if(currentUser.role === 'admin') refreshUsersList();
+}
+
+async function doLogin(){
+  const u = (document.getElementById('loginUser')||{}).value.trim().toLowerCase();
+  const p = (document.getElementById('loginPass')||{}).value;
+  const err = document.getElementById('loginErr');
+  if(!u || !p){ if(err) err.textContent = 'Enter username and password.'; return; }
+  try {
+    const users = await dbGetAll('users');
+    const user = users.find(x => (x.username||'').toLowerCase() === u);
+    if(!user){ if(err) err.textContent = 'Unknown user.'; return; }
+    const hash = await sha256(p);
+    if(hash !== user.passHash){ if(err) err.textContent = 'Wrong password.'; return; }
+    currentUser = {id:user.id, username: user.username, role: user.role};
+    localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(currentUser));
+    hideLogin();
+    updateUserBar();
+    await restoreOnLoad();
+    refreshHistoryList();
+  } catch(e){
+    console.error(e);
+    if(err) err.textContent = 'Login failed: ' + e.message;
+  }
+}
+
+function logoutUser(){
+  if(!confirm('Log out? Unsaved edits auto-save to your session.')) return;
+  try { saveSessionNow(); } catch(e){}
+  currentUser = null;
+  currentHistoryId = null;
+  localStorage.removeItem(AUTH_SESSION_KEY);
+  showLogin();
+  const pu = document.getElementById('loginUser');
+  const pp = document.getElementById('loginPass');
+  if(pu) pu.value = '';
+  if(pp) pp.value = '';
+}
+
+async function refreshUsersList(){
+  const box = document.getElementById('usersList');
+  if(!box || !currentUser || currentUser.role !== 'admin') return;
+  const users = await dbGetAll('users');
+  box.innerHTML = users.map(u=>`
+    <div class="repeatItem" style="margin-top:6px;">
+      <div class="rowHead">
+        <span style="color:#fff;font-size:12px;font-weight:600;">${escapeHtml(u.username)} <span style="color:#7fa0c4;font-weight:400;">(${escapeHtml(u.role)})</span></span>
+        ${u.username === 'admin' ? '' : `<button class="miniBtn delBtn" style="margin-top:0;" onclick="adminDeleteUser('${u.id}')">Delete</button>`}
+      </div>
+    </div>
+  `).join('') || '<div style="font-size:11px;color:#7f93a8;">No users</div>';
+}
+
+async function adminCreateUser(){
+  if(!currentUser || currentUser.role !== 'admin') return;
+  const username = ((document.getElementById('newUserName')||{}).value || '').trim().toLowerCase();
+  const pass = ((document.getElementById('newUserPass')||{}).value || '');
+  const role = ((document.getElementById('newUserRole')||{}).value || 'junior');
+  if(!username || username.length < 2){ alert('Username too short'); return; }
+  if(!pass || pass.length < 4){ alert('Password min 4 characters'); return; }
+  const users = await dbGetAll('users');
+  if(users.some(u => (u.username||'').toLowerCase() === username)){ alert('Username already exists'); return; }
+  const passHash = await sha256(pass);
+  await dbPut('users', {
+    id: 'u_' + Date.now(),
+    username,
+    passHash,
+    role: role === 'admin' ? 'admin' : 'junior',
+    createdAt: new Date().toISOString()
+  });
+  document.getElementById('newUserName').value = '';
+  document.getElementById('newUserPass').value = '';
+  refreshUsersList();
+  alert('User created: ' + username);
+}
+
+async function adminDeleteUser(id){
+  if(!currentUser || currentUser.role !== 'admin') return;
+  if(!confirm('Delete this user and keep their projects orphaned?')) return;
+  await dbDelete('users', id);
+  refreshUsersList();
+}
+
+function collectFormIds(){
+  return [
+    'projCode','projTitle','milestoneTag','milestoneDesc','projDuration','projLocation',
+    'noteText','assumptions','scopeTitle','scopeItems','exclTitle','exclItems','legendItems',
+    'covQuotation','covPlantType','covSubtitle','covPreparedBy','covDate',
+    'workingDays','contractValue','posterChartType','langSelect','companySelect','projectTypeSelect',
+    'chkManpower','colManpower','chkByDisc','chkManDays','colManDays','chkCraneDays','colCraneDays',
+    'slideCover','slidePoster','slideTable','slideCharts','slideCost','slidePayment',
+    'currencySymbol','historySaveName'
+  ];
+}
+
+function collectState(){
+  const fields = {};
+  collectFormIds().forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(el.type === 'checkbox') fields[id] = !!el.checked;
+    else fields[id] = el.value;
+  });
+  const curCustom = document.getElementById('currencySymbolCustom');
+  if(curCustom) fields.currencySymbolCustom = curCustom.value;
+
+  return {
+    version: 2,
+    savedAt: new Date().toISOString(),
+    historyId: currentHistoryId,
+    ownerId: currentUser ? currentUser.id : null,
+    ownerName: currentUser ? currentUser.username : null,
+    fields,
+    kpis: JSON.parse(JSON.stringify(kpis)),
+    sections: JSON.parse(JSON.stringify(sections)),
+    manpower: JSON.parse(JSON.stringify(manpower)),
+    disciplines: JSON.parse(JSON.stringify(disciplines)),
+    costItems: JSON.parse(JSON.stringify(costItems)),
+    paymentMilestones: JSON.parse(JSON.stringify(paymentMilestones)),
+    roles: JSON.parse(JSON.stringify(roles)),
+    chartSettings: JSON.parse(JSON.stringify(chartSettings)),
+    posterChartType: posterChartType,
+    contractValue: contractValue,
+    currencySymbol: currencySymbol,
+    activeCompanyId: activeCompanyId,
+    currentLang: currentLang,
+    coverData: {
+      quotationNumber: coverData.quotationNumber,
+      plantType: coverData.plantType,
+      subtitle: coverData.subtitle,
+      preparedBy: coverData.preparedBy,
+      date: coverData.date,
+      values: coverData.values,
+      photo: coverData.photo || ''
+    }
+  };
+}
+
+function applyState(state){
+  if(!state || typeof state !== 'object') return false;
+  _restoring = true;
+  try {
+    if(state.kpis) kpis = state.kpis;
+    if(state.sections) sections = state.sections;
+    if(state.manpower) manpower = state.manpower;
+    if(state.disciplines) disciplines = state.disciplines;
+    if(state.costItems) costItems = state.costItems;
+    if(state.paymentMilestones) paymentMilestones = state.paymentMilestones;
+    if(state.roles) roles = state.roles;
+    if(state.chartSettings) chartSettings = Object.assign(chartSettings, state.chartSettings);
+    if(state.posterChartType) posterChartType = state.posterChartType;
+    if(typeof state.contractValue === 'number') contractValue = state.contractValue;
+    if(state.currencySymbol) currencySymbol = state.currencySymbol;
+    if(state.activeCompanyId) activeCompanyId = state.activeCompanyId;
+    if(state.currentLang) currentLang = state.currentLang;
+    if(state.coverData){
+      Object.keys(state.coverData).forEach(k=>{
+        if(state.coverData[k] !== undefined) coverData[k] = state.coverData[k];
+      });
+    }
+    if(state.historyId) currentHistoryId = state.historyId;
+
+    const fields = state.fields || {};
+    Object.keys(fields).forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      if(el.type === 'checkbox') el.checked = !!fields[id];
+      else el.value = fields[id] != null ? fields[id] : '';
+    });
+    if(fields.currencySymbolCustom != null){
+      const curCustom = document.getElementById('currencySymbolCustom');
+      if(curCustom) curCustom.value = fields.currencySymbolCustom;
+    }
+    const langEl = document.getElementById('langSelect');
+    if(langEl && currentLang) langEl.value = currentLang;
+    const compEl = document.getElementById('companySelect');
+    if(compEl && activeCompanyId) compEl.value = activeCompanyId;
+    const pctEl = document.getElementById('posterChartType');
+    if(pctEl && posterChartType) pctEl.value = posterChartType;
+
+    buildKPIEditor();
+    buildSectionEditor();
+    buildManpowerEditor();
+    buildDiscEditor();
+    buildCostEditor();
+    buildPaymentEditor();
+    if(typeof setLanguage === 'function') setLanguage(currentLang);
+    render();
+    const totals = computeTotals();
+    document.getElementById('rolesBlock').innerHTML = buildRolesTable(totals);
+    document.getElementById('chartsBlock').innerHTML = buildChartsBlock(totals);
+    document.getElementById('costBlock').innerHTML = buildCostBlock();
+    document.getElementById('paymentBlock').innerHTML = buildPaymentBlock();
+    applySlideSelection();
+    updateHistoryStatus('Restored — ' + formatWhen(state.savedAt) + (state.ownerName ? ' · ' + state.ownerName : ''));
+    return true;
+  } catch(err){
+    console.error('applyState failed', err);
+    updateHistoryStatus('Restore failed: ' + err.message);
+    return false;
+  } finally {
+    _restoring = false;
+  }
+}
+
+function formatWhen(iso){
+  if(!iso) return '';
+  try { return new Date(iso).toLocaleString(); } catch(e){ return iso; }
+}
+
+function updateHistoryStatus(msg){
+  const el = document.getElementById('historyStatus');
+  if(el) el.textContent = msg;
+}
+
+async function saveSessionNow(){
+  if(!currentUser || !db) return false;
+  try {
+    const state = collectState();
+    await dbPut('sessions', { userId: currentUser.id, state: state, savedAt: state.savedAt });
+    updateHistoryStatus('Session saved — ' + formatWhen(state.savedAt));
+    return true;
+  } catch(err){
+    console.error(err);
+    updateHistoryStatus('Could not save session');
+    return false;
+  }
+}
+
+function scheduleAutosave(){
+  if(_restoring || !currentUser) return;
+  clearTimeout(_autosaveTimer);
+  _autosaveTimer = setTimeout(function(){ saveSessionNow(); }, 800);
+}
+
+async function saveNamedProject(){
+  if(!currentUser || !db){ alert('Please sign in first.'); return; }
+  const nameEl = document.getElementById('historySaveName');
+  let name = (nameEl && nameEl.value.trim()) || '';
+  if(!name){
+    const code = (document.getElementById('projCode')||{}).value || '';
+    const title = (document.getElementById('projTitle')||{}).value || '';
+    name = (code + ' — ' + title).trim() || ('Project ' + new Date().toLocaleDateString());
+    if(nameEl) nameEl.value = name;
+  }
+  const state = collectState();
+  state.name = name;
+  if(!currentHistoryId) currentHistoryId = 'p_' + Date.now();
+  state.historyId = currentHistoryId;
+  const rec = {
+    id: currentHistoryId,
+    name: name,
+    ownerId: currentUser.id,
+    ownerName: currentUser.username,
+    savedAt: state.savedAt,
+    state: state
+  };
+  await dbPut('projects', rec);
+  await dbPut('sessions', { userId: currentUser.id, state: state, savedAt: state.savedAt });
+  refreshHistoryList();
+  updateHistoryStatus('Saved «' + name + '» — ' + formatWhen(state.savedAt));
+}
+
+async function loadNamedProject(id){
+  if(!db) return;
+  const proj = await dbGet('projects', id);
+  if(!proj){ alert('Project not found.'); return; }
+  if(currentUser.role !== 'admin' && proj.ownerId !== currentUser.id){
+    alert('You do not have access to this project.');
+    return;
+  }
+  currentHistoryId = proj.id;
+  applyState(proj.state);
+  const nameEl = document.getElementById('historySaveName');
+  if(nameEl) nameEl.value = proj.name || '';
+  await saveSessionNow();
+}
+
+async function deleteNamedProject(id){
+  if(!confirm('Delete this saved project?')) return;
+  const proj = await dbGet('projects', id);
+  if(!proj) return;
+  if(currentUser.role !== 'admin' && proj.ownerId !== currentUser.id){
+    alert('Only the owner or Admin can delete this.');
+    return;
+  }
+  await dbDelete('projects', id);
+  if(currentHistoryId === id) currentHistoryId = null;
+  refreshHistoryList();
+  updateHistoryStatus('Project deleted.');
+}
+
+async function refreshHistoryList(){
+  const box = document.getElementById('historyList');
+  if(!box || !currentUser || !db) return;
+  let list = [];
+  if(currentUser.role === 'admin'){
+    list = await dbGetAll('projects');
+  } else {
+    list = await dbGetAllByIndex('projects', 'ownerId', currentUser.id);
+  }
+  list.sort((a,b)=> (b.savedAt||'').localeCompare(a.savedAt||''));
+  if(!list.length){
+    box.innerHTML = '<div style="font-size:11px;color:#7f93a8;padding:8px 0;">No saved projects yet. Type a name and click Save.</div>';
+    return;
+  }
+  box.innerHTML = list.map(p=>`
+    <div class="repeatItem" style="margin-top:6px;padding:8px;">
+      <div class="rowHead">
+        <span style="font-size:12px;color:#fff;font-weight:600;">${escapeHtml(p.name||'Untitled')}</span>
+        <span style="font-size:10px;color:#7fa0c4;">${escapeHtml(formatWhen(p.savedAt))}</span>
+      </div>
+      <div style="font-size:10px;color:#7f93a8;margin:4px 0;">by ${escapeHtml(p.ownerName||'—')}</div>
+      <div class="row2" style="margin-top:4px;">
+        <button class="miniBtn" style="background:var(--teal);margin-top:0;flex:1;" onclick="loadNamedProject('${p.id}')">Continue</button>
+        <button class="miniBtn delBtn" style="margin-top:0;" onclick="deleteNamedProject('${p.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function exportProjectJSON(){
+  const state = collectState();
+  const name = ((document.getElementById('historySaveName')||{}).value || (document.getElementById('projCode')||{}).value || 'project').trim();
+  state.name = name;
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name.replace(/[^a-z0-9]+/gi,'_') + '_dashboard.json';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ try{document.body.removeChild(a); URL.revokeObjectURL(url);}catch(e){} }, 1000);
+  updateHistoryStatus('Exported JSON file.');
+}
+
+function importProjectJSON(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(){
+    try {
+      const state = JSON.parse(reader.result);
+      currentHistoryId = state.historyId || null;
+      applyState(state);
+      saveSessionNow();
+      const nameEl = document.getElementById('historySaveName');
+      if(nameEl && state.name) nameEl.value = state.name;
+      updateHistoryStatus('Imported «' + (state.name || file.name) + '»');
+    } catch(err){
+      alert('Invalid JSON file: ' + err.message);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+async function clearCurrentSession(){
+  if(!confirm('Clear current session and start fresh? Named saves are kept.')) return;
+  if(currentUser && db){
+    try { await dbDelete('sessions', currentUser.id); } catch(e){}
+  }
+  currentHistoryId = null;
+  location.reload();
+}
+
+async function restoreOnLoad(){
+  if(!currentUser || !db) return false;
+  try {
+    const sess = await dbGet('sessions', currentUser.id);
+    if(sess && sess.state){
+      applyState(sess.state);
+      const nameEl = document.getElementById('historySaveName');
+      if(nameEl && sess.state.name) nameEl.value = sess.state.name;
+      updateHistoryStatus('Continued — ' + formatWhen(sess.savedAt || sess.state.savedAt));
+      await refreshHistoryList();
+      return true;
+    }
+  } catch(err){
+    console.error(err);
+  }
+  updateHistoryStatus('New session for ' + currentUser.username + ' — changes auto-save.');
+  await refreshHistoryList();
+  return false;
+}
+
+document.addEventListener('change', function(e){
+  if(_restoring) return;
+  if(e && e.target && (e.target.closest && e.target.closest('.editor'))) scheduleAutosave();
+});
+document.addEventListener('input', function(e){
+  if(_restoring) return;
+  if(e && e.target && (e.target.closest && e.target.closest('.editor'))) scheduleAutosave();
+});
+window.addEventListener('beforeunload', function(){
+  if(!_restoring && currentUser) saveSessionNow();
+});
+
+async function bootAuth(){
+  try {
+    db = await openDB();
+    await ensureDefaultUsers();
+    // try restore auth session
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null'); } catch(e){}
+    if(saved && saved.id && saved.username){
+      const user = await dbGet('users', saved.id);
+      if(user){
+        currentUser = {id:user.id, username:user.username, role:user.role};
+        hideLogin();
+        updateUserBar();
+        const restored = await restoreOnLoad();
+        if(!restored){
+          render();
+          renderExtras();
+          applySlideSelection();
+        }
+        return;
+      }
+    }
+    showLogin();
+  } catch(err){
+    console.error('DB boot failed', err);
+    // Fallback: allow use without DB
+    hideLogin();
+    updateHistoryStatus('Local DB unavailable — working without accounts.');
+  }
+}
+
 /* ---------- init ---------- */
 PROJECT_TYPE_PRESETS.integrated = {
   label: "Integrated (Steel + Electrical & Automation)",
@@ -2434,11 +3110,14 @@ buildManpowerEditor();
 buildDiscEditor();
 buildCostEditor();
 buildPaymentEditor();
-render();
-renderExtras();
-applySlideSelection();
 initUIObserver();
 translateUI();
+// Auth + local DB boot (login, then restore session)
+bootAuth();
+var _genBtn = document.querySelector('.genBtn');
+if(_genBtn){
+  _genBtn.addEventListener('click', function(){ setTimeout(function(){ saveSessionNow(); }, 200); });
+}
 
 /* ============ SWIPEABLE LEFT-SIDE EDITOR DRAWER (sticky, always in view) ============ */
 (function(){
