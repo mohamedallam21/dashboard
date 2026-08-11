@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
 <title>Master Execution Plan — Dashboard Generator</title>
 <style>
   :root{
@@ -340,12 +340,12 @@
   .tableToolbar label{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;}
   .tableToolbar input[type=number]{width:60px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;}
 
-  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
-  .chart-card{border:1px solid var(--line);border-radius:10px;padding:12px;}
+  .charts-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;}
+  .chart-card{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;overflow:hidden;}
   .chart-card h5{margin:0 0 8px;font-size:11.5px;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;}
   @media (max-width:900px){.charts-grid{grid-template-columns:1fr;}}
 
-  .cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:18px 22px;}
+  .cost-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;padding:18px 22px;overflow:hidden;}
   @media (max-width:900px){.cost-grid{grid-template-columns:1fr;}}
   .cost-highlight{grid-column:1 / -1;display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,var(--navy),var(--navy-dark));color:#fff;border-radius:12px;padding:16px 22px;}
   .cost-highlight .chi-icon{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;flex:0 0 52px;}
@@ -494,13 +494,15 @@
     .p-bottom{grid-template-columns:1fr !important; gap:14px; padding:14px 12px;}
     .p-exclusions{margin:0 12px 14px;}
     .excl-grid{gap:6px;}
-    .charts-grid, .cost-grid{grid-template-columns:1fr !important;}
+    .charts-grid, .cost-grid{grid-template-columns:minmax(0,1fr) !important;}
+    .chart-card{min-width:0 !important; overflow:hidden !important;}
 
     /* Cost / legend — no cut-off text */
-    .cost-grid{padding:12px !important; gap:12px !important;}
-    .cost-grid svg, .chartbox svg{max-width:100%; height:auto;}
-    #costBlock .block-body, #costBlock{
-      overflow-x:visible !important;
+    .cost-grid{padding:12px !important; gap:12px !important; overflow:hidden !important;}
+    .cost-grid svg, .chartbox svg, .chart-card svg{max-width:100% !important; height:auto !important;}
+    #costBlock .block-body, #costBlock, #chartsBlock .block-body{
+      overflow-x:hidden !important;
+      max-width:100%;
     }
     #costBlock div[style*="flex"],
     #costBlock div[style*="display:flex"]{
@@ -2070,32 +2072,35 @@ function svgDonut(items, w=320, h=260){
       <span style="width:9px;height:9px;background:${it.color};display:inline-block;border-radius:2px;flex:0 0 9px;"></span>
       <span style="flex:1;">${escapeHtml(it.label)}</span><b style="color:#1c2b3a;">${pct}%</b></div>`;
   }).join('');
-  return `<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
-    <svg viewBox="0 0 ${w} ${h-40}" width="200" height="${h-40}">${paths}
+  return `<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;width:100%;max-width:100%;box-sizing:border-box;">
+    <svg viewBox="0 0 ${w} ${h-40}" style="width:min(180px,42vw);max-width:100%;height:auto;flex:0 0 auto;">${paths}
       <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="10" fill="#6b7c8f">TOTAL</text>
       <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="13" font-weight="700" fill="#1c2b3a">100%</text>
     </svg>
-    <div style="flex:1;min-width:140px;">${legend}</div>
+    <div style="flex:1 1 140px;min-width:0;max-width:100%;">${legend}</div>
   </div>`;
 }
 
 function svgHBar(items, w=560){
   // items: [{label, value, color}] — sorted desc by caller; ranked bar with biggest on top
   const maxV = Math.max(...items.map(it=>it.value), 1);
-  const rowH = 26, gap = 8, padL = 4, labelW = 150, padR = 60;
-  const h = items.length*(rowH+gap) + 6;
-  const barMaxW = w - labelW - padR;
+  const rowH = 26, gap = 8, padR = 88;
+  // Size label column from longest label (keeps names readable on phone)
+  const longest = items.reduce((n,it)=> Math.max(n, String(it.label||'').length), 0);
+  const labelW = Math.min(200, Math.max(110, longest * 6.2));
+  const h = items.length*(rowH+gap) + 10;
+  const barMaxW = Math.max(40, w - labelW - padR);
   const rows = items.map((it,i)=>{
-    const y = i*(rowH+gap) + 4;
+    const y = i*(rowH+gap) + 8;
     const bw = (it.value/maxV) * barMaxW;
     return `
       <text x="${labelW-8}" y="${y+rowH/2+4}" text-anchor="end" font-size="10.5" font-weight="${i===0?'700':'600'}" fill="#1c2b3a">${escapeHtml(it.label)}</text>
       <rect x="${labelW}" y="${y}" width="${bw.toFixed(1)}" height="${rowH}" rx="4" fill="${it.color}" ${i===0?'stroke="#1c2b3a" stroke-width="1.5"':''}/>
-      <text x="${labelW+bw+8}" y="${y+rowH/2+4}" font-size="10.5" font-weight="700" fill="#1c2b3a">${it.display}</text>
-      ${i===0?`<text x="${labelW}" y="${y-4}" font-size="9" font-weight="700" fill="${it.color}">★ LARGEST SHARE</text>`:''}
+      <text x="${Math.min(labelW+bw+8, w-4)}" y="${y+rowH/2+4}" font-size="10.5" font-weight="700" fill="#1c2b3a" text-anchor="${(labelW+bw+8) > (w-50) ? 'end' : 'start'}">${it.display}</text>
+      ${i===0?`<text x="${labelW}" y="${y-2}" font-size="9" font-weight="700" fill="${it.color}">★ LARGEST SHARE</text>`:''}
     `;
   }).join('');
-  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}">${rows}</svg>`;
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" style="max-width:100%;display:block;">${rows}</svg>`;
 }
 
 function buildChartsBlock(totals){
