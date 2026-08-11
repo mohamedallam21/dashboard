@@ -3422,13 +3422,22 @@ if(_genBtn){
   }
 
   function positionToggle(open){
-    // Clear inline overrides that fight CSS on mobile
+    // On mobile, explicitly pin the button to the right edge when the
+    // drawer is open and the left edge when closed. (Previously this just
+    // cleared inline styles and let CSS decide, but the drag handlers
+    // below set an inline "left" during swipes that could stick around
+    // and keep the button on the left even while the panel was open.)
     if(isMobile()){
-      menuToggle.style.left = '';
-      menuToggle.style.right = '';
       menuToggle.style.top = '';
       menuToggle.style.bottom = '';
       menuToggle.style.transform = '';
+      if(open){
+        menuToggle.style.left = 'auto';
+        menuToggle.style.right = '12px';
+      } else {
+        menuToggle.style.left = '10px';
+        menuToggle.style.right = '';
+      }
       return;
     }
     menuToggle.style.left = (open ? targetWidth() - 20 : 16) + 'px';
@@ -3507,7 +3516,9 @@ if(_genBtn){
     editor.classList.add('open');
     editor.style.width = next + 'px';
     editor.style.flexBasis = next + 'px';
-    menuToggle.style.left = Math.max(16, next - 20) + 'px';
+    if(!isMobile()){
+      menuToggle.style.left = Math.max(16, next - 20) + 'px';
+    }
     if(evt && evt.cancelable) evt.preventDefault();
   }
   function dragEnd(fromToggle){
