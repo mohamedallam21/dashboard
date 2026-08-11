@@ -117,7 +117,7 @@
   .disc-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;}
   .disc-dot{width:10px;height:10px;border-radius:3px;}
   .disc-track{position:relative;height:22px;background:#eef2f6;border-radius:6px;}
-  .disc-bar{position:absolute;top:0;bottom:0;border-radius:6px;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:600;padding:0 4px;white-space:nowrap;overflow:hidden;}
+  .disc-bar{position:absolute;top:0;bottom:0;border-radius:6px;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:flex-start;font-weight:600;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .disc-months{display:grid;grid-template-columns:150px 1fr;margin-top:4px;}
   .disc-months .ml{grid-column:2;display:grid;font-size:9px;color:var(--muted);}
 
@@ -481,6 +481,8 @@
     .p-exclusions{margin:0 12px 14px;}
     .excl-grid{gap:6px;}
     .charts-grid, .cost-grid{grid-template-columns:1fr !important;}
+    .disc-row{grid-template-columns:96px 1fr !important;}
+    .disc-label{font-size:11px !important;}
 
     /* Tables: horizontal scroll */
     .block .tableWrap, #rolesBlock, #costBlock, #paymentBlock{
@@ -492,81 +494,15 @@
     table.rtable input.cellnum{width:40px; font-size:14px; min-height:36px;}
     table.rtable input.cellname{font-size:14px; min-height:36px;}
 
-    /* Cover page — full width stack on phone */
-    .cover{
-      flex-direction:column !important;
-      min-height:0 !important;
-      overflow:visible !important;
-    }
-    .cover .cov-left{
-      width:100% !important;
-      max-width:100% !important;
-      padding:22px 18px 16px !important;
-      box-sizing:border-box;
-    }
-    .cover .cov-logo{max-width:180px; max-height:70px;}
-    .cover .cov-title{font-size:22px !important; line-height:1.2;}
-    .cover .cov-code{font-size:14px !important;}
-    .cover .cov-subtitle{font-size:12px !important; margin-bottom:16px;}
-    .cover .cov-infobar{
-      flex-direction:column !important;
-      gap:12px !important;
-      width:100% !important;
-      padding:14px !important;
-      box-sizing:border-box;
-    }
-    .cover .cov-infobar .ci-item{
-      width:100%;
-      align-items:flex-start;
-    }
-    .cover .cov-infobar .ci-text{
-      min-width:0;
-      flex:1;
-      overflow:visible;
-    }
-    .cover .cov-infobar .ci-text b{
-      font-size:14px !important;
-      word-break:break-word;
-      white-space:normal;
-      display:block;
-    }
-    .cover .cov-infobar .ci-text small{
-      white-space:normal;
-    }
-    .cover .cov-values{
-      display:grid !important;
-      grid-template-columns:repeat(3, 1fr);
-      gap:12px 8px !important;
-      width:100%;
-      margin-top:16px !important;
-      padding-top:12px !important;
-      justify-items:center;
-    }
-    .cover .cov-values .cv-item{
-      width:auto !important;
-      max-width:100%;
-    }
-    .cover .cov-footer{
-      flex-direction:column;
-      align-items:flex-start;
-      gap:8px;
-      font-size:12px;
-    }
-    .cover .cov-right{
-      width:100% !important;
-      min-height:160px !important;
-      height:180px;
-      order:-1; /* photo on top on mobile */
-    }
-    .cover .cov-right .cov-photo{
-      position:relative !important;
-      clip-path:none !important;
-      width:100% !important;
-      height:180px !important;
-      object-fit:cover;
-      display:block;
-    }
-    .cover .cov-right .cov-diag{display:none !important;}
+    /* Cover page */
+    .cover{flex-direction:column;}
+    .cov-left{width:100% !important; padding:24px 20px !important;}
+    .cov-right{width:100% !important; min-height:180px;}
+    .cov-right .cov-photo{clip-path:none; width:100%; height:180px; object-fit:cover;}
+    .cov-right .cov-diag{display:none;}
+    .cov-title{font-size:24px !important;}
+    .cov-infobar{flex-direction:column; gap:10px !important;}
+    .cov-values{justify-content:center;}
 
     /* Login */
     .loginCard{width:min(400px, 94vw); padding:22px 18px 18px; max-height:92vh; overflow-y:auto;}
@@ -616,7 +552,7 @@
   </svg>
 </button>
 <div class="editorEdgeGrip" id="editorEdgeGrip"></div>
-<div class="editorOverlay" id="editorOverlay" onclick="closeEditor()"></div>
+<div class="editorOverlay" id="editorOverlay"></div>
 
 <div class="app">
 
@@ -3512,9 +3448,29 @@ if(_genBtn){
     positionToggle(editor.classList.contains('open'));
   });
 
+  // Overlay tap-to-close. The menu button relocates to the opposite edge
+  // the instant the drawer opens, so a tap's delayed synthetic click can
+  // land on the overlay behind where the button used to be — guard so
+  // that doesn't close the drawer right after opening it.
+  var openedAt = 0;
+  var _openEditor = window.openEditor;
+  window.openEditor = function(){ openedAt = Date.now(); return _openEditor.apply(this, arguments); };
+  if(overlay){
+    overlay.addEventListener('click', function(){
+      if(Date.now() - openedAt < 400) return;
+      closeEditor();
+    });
+  }
+
   // --- shared drag handling (touch + mouse), horizontal ---
   var startX = 0, startY = 0, curX = 0, dragging = false, panelWidth = 0, didMove = false;
   var MOVE_THRESHOLD = 8;
+  // Guards against the browser's synthetic mousedown/click that fires
+  // right after a real touch tap — without this, one tap on the menu
+  // button toggles the drawer twice (open, then instantly close again).
+  var lastTouchTime = 0;
+  function markTouched(){ lastTouchTime = Date.now(); }
+  function isSyntheticMouse(){ return (Date.now() - lastTouchTime) < 800; }
 
   function dragStart(x, y){
     startX = x; startY = y; curX = x;
@@ -3569,16 +3525,18 @@ if(_genBtn){
     return false;
   }
   function onTouchStart(e){
+    markTouched();
     if(isFormTarget(e.target)) return;
     var t = e.touches[0];
     dragStart(t.clientX, t.clientY);
   }
   function onTouchMove(e){
+    markTouched();
     if(!dragging) return;
     var t = e.touches[0];
     dragMove(t.clientX, t.clientY, e);
   }
-  function onTouchEnd(){ dragEnd(false); }
+  function onTouchEnd(){ markTouched(); dragEnd(false); }
 
   edgeGrip.addEventListener('touchstart', onTouchStart, {passive:true});
   edgeGrip.addEventListener('touchmove', onTouchMove, {passive:false});
@@ -3602,12 +3560,14 @@ if(_genBtn){
     document.removeEventListener('mouseup', toggleMouseUp);
   };
   edgeGrip.addEventListener('mousedown', function(e){
+    if(isSyntheticMouse()) return;
     dragStart(e.clientX, e.clientY);
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', edgeMouseUp);
   });
   // Button always handles open + close on click; drag only if pointer moves
   menuToggle.addEventListener('mousedown', function(e){
+    if(isSyntheticMouse()) return; // ignore the synthetic mouse event that follows a real tap
     e.preventDefault();
     dragStart(e.clientX, e.clientY);
     document.addEventListener('mousemove', onMouseMove);
@@ -3618,14 +3578,17 @@ if(_genBtn){
 
   // Touch on the button: treat as toggle (tap) or drag-close
   menuToggle.addEventListener('touchstart', function(e){
+    markTouched();
     var t = e.touches[0];
     dragStart(t.clientX, t.clientY);
   }, {passive:true});
   menuToggle.addEventListener('touchmove', function(e){
+    markTouched();
     var t = e.touches[0];
     dragMove(t.clientX, t.clientY, e);
   }, {passive:false});
   menuToggle.addEventListener('touchend', function(){
+    markTouched();
     dragEnd(true);
   });
 
