@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
 <title>Master Execution Plan — Dashboard Generator</title>
 <style>
   :root{
@@ -340,13 +340,16 @@
   .tableToolbar label{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;}
   .tableToolbar input[type=number]{width:60px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;}
 
-  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
-  .chart-card{border:1px solid var(--line);border-radius:10px;padding:12px;}
+  .charts-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;}
+  .chart-card{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;}
   .chart-card h5{margin:0 0 8px;font-size:11.5px;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;}
-  @media (max-width:900px){.charts-grid{grid-template-columns:1fr;}}
+  @media (max-width:900px){.charts-grid{grid-template-columns:minmax(0,1fr);}}
 
-  .cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:18px 22px;}
-  @media (max-width:900px){.cost-grid{grid-template-columns:1fr;}}
+  .cost-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;padding:18px 22px;}
+  @media (max-width:900px){.cost-grid{grid-template-columns:minmax(0,1fr);}}
+  /* SVG charts must never force their grid track wider than the card — this
+     is what was clipping the donut legend and ranked-bar chart on phones */
+  .chart-card svg, .cost-highlight svg{max-width:100%; height:auto; display:block;}
   .cost-highlight{grid-column:1 / -1;display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,var(--navy),var(--navy-dark));color:#fff;border-radius:12px;padding:16px 22px;}
   .cost-highlight .chi-icon{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;flex:0 0 52px;}
   .cost-highlight .chi-icon svg{width:26px;height:26px;stroke:var(--gold);}
@@ -480,7 +483,7 @@
     .p-bottom{grid-template-columns:1fr !important; gap:14px; padding:14px 12px;}
     .p-exclusions{margin:0 12px 14px;}
     .excl-grid{gap:6px;}
-    .charts-grid, .cost-grid{grid-template-columns:1fr !important;}
+    .charts-grid, .cost-grid{grid-template-columns:minmax(0,1fr) !important;}
     .disc-row{grid-template-columns:96px 1fr !important;}
     .disc-label{font-size:11px !important;}
 
@@ -1959,19 +1962,20 @@ function svgDonut(items, w=320, h=260){
       <span style="width:9px;height:9px;background:${it.color};display:inline-block;border-radius:2px;flex:0 0 9px;"></span>
       <span style="flex:1;">${escapeHtml(it.label)}</span><b style="color:#1c2b3a;">${pct}%</b></div>`;
   }).join('');
-  return `<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
-    <svg viewBox="0 0 ${w} ${h-40}" width="200" height="${h-40}">${paths}
+  return `<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;min-width:0;">
+    <svg viewBox="0 0 ${w} ${h-40}" style="width:200px;max-width:100%;flex:0 1 200px;" height="${h-40}">${paths}
       <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="10" fill="#6b7c8f">TOTAL</text>
       <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="13" font-weight="700" fill="#1c2b3a">100%</text>
     </svg>
-    <div style="flex:1;min-width:140px;">${legend}</div>
+    <div style="flex:1 1 140px;min-width:140px;max-width:100%;">${legend}</div>
   </div>`;
 }
 
 function svgHBar(items, w=560){
   // items: [{label, value, color}] — sorted desc by caller; ranked bar with biggest on top
   const maxV = Math.max(...items.map(it=>it.value), 1);
-  const rowH = 26, gap = 8, padL = 4, labelW = 150, padR = 60;
+  const longestLabel = Math.max(...items.map(it=>String(it.label).length), 1);
+  const rowH = 26, gap = 8, padL = 4, labelW = Math.min(240, Math.max(80, longestLabel*7.4)), padR = 80;
   const h = items.length*(rowH+gap) + 6;
   const barMaxW = w - labelW - padR;
   const rows = items.map((it,i)=>{
