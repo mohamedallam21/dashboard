@@ -3287,14 +3287,22 @@ if(_genBtn){
   }
 
   // touch events (mobile/tablet)
+  var INTERACTIVE_SEL = 'input, textarea, select, button, summary, a, label, option, .miniBtn, .genBtn';
   function onTouchStart(e){ var t = e.touches[0]; dragStart(t.clientX, t.clientY); }
   function onTouchMove(e){ var t = e.touches[0]; dragMove(t.clientX, t.clientY, e); }
   function onTouchEnd(){ dragEnd(false); }
+  // Same as onTouchStart, but skips drag-initiation when the touch starts on a
+  // form control or other interactive element, so taps/typing on inputs,
+  // textareas, selects, and buttons inside the editor work normally on mobile.
+  function onEditorTouchStart(e){
+    if(e.target && e.target.closest && e.target.closest(INTERACTIVE_SEL)) return;
+    var t = e.touches[0]; dragStart(t.clientX, t.clientY);
+  }
 
   edgeGrip.addEventListener('touchstart', onTouchStart, {passive:true});
   edgeGrip.addEventListener('touchmove', onTouchMove, {passive:false});
   edgeGrip.addEventListener('touchend', onTouchEnd);
-  editor.addEventListener('touchstart', onTouchStart);
+  editor.addEventListener('touchstart', onEditorTouchStart, {passive:true});
   editor.addEventListener('touchmove', onTouchMove, {passive:false});
   editor.addEventListener('touchend', onTouchEnd);
 
