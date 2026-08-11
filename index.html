@@ -2295,9 +2295,14 @@ function exportSelectedPDF(){
   let chain = Promise.resolve();
   targets.forEach((el, idx)=>{
     chain = chain.then(()=>{
-      // Scroll element into view so mobile browsers layout it fully
-      try { el.scrollIntoView({block:'nearest'}); } catch(e){}
       const restoreAll = prepareForCapture(el);
+      // html2canvas snapshots relative to the page's current scroll position.
+      // On mobile, if the page had been scrolled (very likely — the export
+      // button sits below the content), that offset gets baked into the
+      // capture and crops the result down to a thin sliver. Telling it the
+      // real scroll offset (so it renders as if scrolled to 0,0) and giving
+      // it the element's own top-left as the capture origin fixes that.
+      const rect = el.getBoundingClientRect();
       return html2canvas(el, {
         scale: scale,
         backgroundColor: '#ffffff',
@@ -2305,7 +2310,11 @@ function exportSelectedPDF(){
         allowTaint: true,
         logging: false,
         windowWidth: el.scrollWidth,
-        windowHeight: el.scrollHeight
+        windowHeight: el.scrollHeight,
+        scrollX: -window.scrollX,
+        scrollY: -window.scrollY,
+        x: rect.left + window.scrollX,
+        y: rect.top + window.scrollY
       }).then(canvas=>{
         restoreAll();
         return canvas;
