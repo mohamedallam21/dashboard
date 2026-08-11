@@ -492,11 +492,81 @@
     table.rtable input.cellnum{width:40px; font-size:14px; min-height:36px;}
     table.rtable input.cellname{font-size:14px; min-height:36px;}
 
-    /* Cover page */
-    .cover{flex-direction:column;}
-    .cov-right{min-height:180px;}
-    .cov-right .cov-photo{clip-path:none; width:100%; height:180px; object-fit:cover;}
-    .cov-right .cov-diag{display:none;}
+    /* Cover page — full width stack on phone */
+    .cover{
+      flex-direction:column !important;
+      min-height:0 !important;
+      overflow:visible !important;
+    }
+    .cover .cov-left{
+      width:100% !important;
+      max-width:100% !important;
+      padding:22px 18px 16px !important;
+      box-sizing:border-box;
+    }
+    .cover .cov-logo{max-width:180px; max-height:70px;}
+    .cover .cov-title{font-size:22px !important; line-height:1.2;}
+    .cover .cov-code{font-size:14px !important;}
+    .cover .cov-subtitle{font-size:12px !important; margin-bottom:16px;}
+    .cover .cov-infobar{
+      flex-direction:column !important;
+      gap:12px !important;
+      width:100% !important;
+      padding:14px !important;
+      box-sizing:border-box;
+    }
+    .cover .cov-infobar .ci-item{
+      width:100%;
+      align-items:flex-start;
+    }
+    .cover .cov-infobar .ci-text{
+      min-width:0;
+      flex:1;
+      overflow:visible;
+    }
+    .cover .cov-infobar .ci-text b{
+      font-size:14px !important;
+      word-break:break-word;
+      white-space:normal;
+      display:block;
+    }
+    .cover .cov-infobar .ci-text small{
+      white-space:normal;
+    }
+    .cover .cov-values{
+      display:grid !important;
+      grid-template-columns:repeat(3, 1fr);
+      gap:12px 8px !important;
+      width:100%;
+      margin-top:16px !important;
+      padding-top:12px !important;
+      justify-items:center;
+    }
+    .cover .cov-values .cv-item{
+      width:auto !important;
+      max-width:100%;
+    }
+    .cover .cov-footer{
+      flex-direction:column;
+      align-items:flex-start;
+      gap:8px;
+      font-size:12px;
+    }
+    .cover .cov-right{
+      width:100% !important;
+      min-height:160px !important;
+      height:180px;
+      order:-1; /* photo on top on mobile */
+    }
+    .cover .cov-right .cov-photo{
+      position:relative !important;
+      clip-path:none !important;
+      width:100% !important;
+      height:180px !important;
+      object-fit:cover;
+      display:block;
+    }
+    .cover .cov-right .cov-diag{display:none !important;}
 
     /* Login */
     .loginCard{width:min(400px, 94vw); padding:22px 18px 18px; max-height:92vh; overflow-y:auto;}
