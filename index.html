@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Master Execution Plan — Dashboard Generator</title>
 <style>
   :root{
@@ -57,8 +58,8 @@
   .rowHead{display:flex;justify-content:space-between;align-items:center;}
   .rowHead span{font-size:11px;color:#7fa0c4;}
 
-  .stage{flex:1;padding:28px 34px;overflow-y:auto;}
-  #poster{max-width:1300px;margin:26px auto 0;background:var(--card);border-radius:14px;box-shadow:0 4px 30px rgba(20,40,70,.12);overflow:hidden;}
+  .stage{flex:1;min-width:0;padding:28px 34px;overflow-x:auto;overflow-y:auto;}
+  #poster{max-width:1300px;width:100%;margin:26px auto 0;background:var(--card);border-radius:14px;box-shadow:0 4px 30px rgba(20,40,70,.12);overflow:visible;}
 
   .p-header{background:linear-gradient(135deg,var(--navy),#4c5760);color:#fff;padding:22px 30px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;}
   .p-header .logoblock{display:flex;align-items:center;flex:0 0 auto;}
@@ -79,7 +80,17 @@
   .p-kpi .kcard .klabel{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#b9c9db;margin-top:2px;}
   .p-kpi .kcard .ksub{font-size:10px;color:#7f93a8;}
 
-  .p-sections{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:22px 26px;align-items:stretch;}
+  .p-sections{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;padding:22px 20px;align-items:stretch;}
+  .p-sections .scard{min-width:0;overflow:hidden;}
+  @media (max-width:1200px){
+    .p-sections{grid-template-columns:repeat(3,minmax(0,1fr));}
+  }
+  @media (max-width:1000px){
+    .p-sections{grid-template-columns:repeat(2,minmax(0,1fr));}
+  }
+  @media (max-width:600px){
+    .p-sections{grid-template-columns:1fr;}
+  }
   .scard{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;background:#fbfcfe;height:100%;min-height:0;}
   .scard .shead{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;min-height:48px;}
   .scard .sbadge{width:26px;height:26px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:0 0 26px;margin-top:2px;}
@@ -158,12 +169,28 @@
   html[dir="rtl"] .costtable td.clabel,html[dir="rtl"] .paytable td.plabel{text-align:right;}
 
   @media print{
-    .editor{display:none;}
-    .stage{padding:0;}
-    #poster{box-shadow:none;border-radius:0;margin-top:0;}
-    #poster, #rolesBlock, #chartsBlock{page-break-after:always; break-after:page;}
-    #chartsBlock{page-break-after:auto; break-after:auto;}
+    @page{ size:A4 portrait; margin:10mm; }
+    html, body{
+      background:#fff !important;
+      -webkit-print-color-adjust:exact !important;
+      print-color-adjust:exact !important;
+    }
+    .editor, .menuToggle, .editorEdgeGrip, .editorOverlay, .dragHandle,
+    #loginGate, .genBtn{ display:none !important; }
+    .app{ display:block !important; }
+    .stage{ padding:0 !important; margin:0 !important; overflow:visible !important; width:100% !important; }
+    .block, #poster, #coverBlock, #rolesBlock, #chartsBlock, #costBlock, #paymentBlock{
+      box-shadow:none !important; border-radius:0 !important;
+      margin:0 auto 6mm !important; max-width:100% !important;
+      page-break-inside:avoid; break-inside:avoid;
+    }
+    #coverBlock, #poster, #rolesBlock, #chartsBlock, #costBlock{
+      page-break-after:always; break-after:page;
+    }
+    #paymentBlock{ page-break-after:auto; break-after:auto; }
     .slide-hidden{display:none !important;}
+    .p-sections{ grid-template-columns:repeat(2, 1fr) !important; }
+    svg{ max-width:100% !important; height:auto !important; }
   }
   @media (max-width:1000px){
     .p-sections{grid-template-columns:repeat(2,1fr);}
@@ -288,6 +315,7 @@
 
   /* ---- detailed manpower & crane table + analytics ---- */
   .block{max-width:1300px;margin:22px auto 0;background:var(--card);border-radius:14px;box-shadow:0 4px 30px rgba(20,40,70,.12);overflow:hidden;}
+  #poster, #coverBlock{max-width:1300px;margin-left:auto;margin-right:auto;}
   .block-head{background:var(--navy);color:#fff;padding:14px 22px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;}
   .block-head small{font-weight:400;text-transform:none;color:#9fc4ee;letter-spacing:0;font-size:11px;}
   .block-head .bh-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
@@ -367,6 +395,119 @@
   .cover .cov-right .cov-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;clip-path:polygon(12% 0, 100% 0, 100% 100%, 0% 100%);}
   .cover .cov-right .cov-diag{position:absolute;left:0;top:0;bottom:0;width:14%;background:linear-gradient(100deg, #fff 48%, transparent 50%);z-index:1;}
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+
+  /* ========== MOBILE / TOUCH ========== */
+  @media (max-width: 900px){
+    html, body{overflow-x:hidden; max-width:100vw;}
+    .stage{padding:12px 10px 80px; padding-top:56px; width:100%; max-width:100vw; box-sizing:border-box;}
+    .block{margin:12px 0 0; border-radius:10px; max-width:100%;}
+    .block-head{padding:12px 14px; font-size:12px;}
+
+    /* Editor becomes full-screen drawer */
+    .editor{
+      position:fixed !important;
+      top:0; left:0; bottom:0;
+      height:100% !important; max-height:100% !important;
+      width:0 !important; max-width:100vw !important;
+      flex:none !important;
+      z-index:1000;
+      background:var(--navy-dark, #202426);
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;
+    }
+    .editor.open{
+      width:min(100vw, 400px) !important;
+      max-width:100vw !important;
+      flex:none !important;
+      box-shadow:8px 0 32px rgba(0,0,0,.45);
+    }
+    .editorInner{padding:16px 14px 100px; padding-top:max(16px, env(safe-area-inset-top));}
+    .editorOverlay{
+      display:none; position:fixed; inset:0; z-index:999;
+      background:rgba(0,0,0,.45); -webkit-tap-highlight-color:transparent;
+    }
+    body.panel-open .editorOverlay{display:block;}
+    body.panel-open{overflow:hidden;}
+    body.panel-open .stage{pointer-events:none; touch-action:none;}
+    body.panel-open .editor{touch-action:pan-y; overflow-y:auto;}
+
+    .menuToggle{
+      width:46px; height:46px; left:10px;
+      top:auto; bottom:max(18px, env(safe-area-inset-bottom));
+      transform:none;
+    }
+    .menuToggle:hover, .menuToggle:active,
+    body.panel-open .menuToggle:hover{
+      transform:scale(1.05);
+    }
+    body.panel-open .menuToggle{
+      left:auto; right:12px;
+      /* sits on the right edge of open panel area */
+    }
+    .editorEdgeGrip{width:12px;}
+
+    /* Bigger form controls — 16px prevents iOS zoom */
+    .editor input[type=text],
+    .editor input[type=number],
+    .editor textarea,
+    .editor select{
+      font-size:16px !important;
+      padding:12px 12px !important;
+      min-height:44px;
+      border-radius:8px;
+    }
+    .editor textarea{min-height:88px;}
+    .editor label{font-size:12px; margin:12px 0 5px;}
+    .editor .section{padding:14px; margin-bottom:10px;}
+    .editor .section > summary{font-size:14px; padding:8px 0; min-height:40px; display:flex; align-items:center;}
+    .miniBtn, .genBtn, .loginBtn{
+      min-height:44px; font-size:14px !important; padding:12px 14px !important;
+    }
+    .row2{flex-direction:column; gap:8px;}
+    .row2 > *{width:100% !important; flex:none !important;}
+
+    /* Dashboard content stacks */
+    .p-header{flex-direction:column; gap:10px; padding:14px; text-align:center;}
+    .p-header .logoblock img{max-height:48px;}
+    .p-header .metablock{justify-content:center;}
+    .p-kpi{flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch;}
+    .p-kpi .kcard{min-width:130px; padding:12px 10px;}
+    .p-kpi .kcard .kval{font-size:18px;}
+    .p-sections{grid-template-columns:1fr !important; gap:10px; padding:14px 12px;}
+    .scard .stitle{min-height:auto; -webkit-line-clamp:3;}
+    .p-chart{padding:10px 12px 16px;}
+    .p-chart h3{font-size:12px;}
+    .p-bottom{grid-template-columns:1fr !important; gap:14px; padding:14px 12px;}
+    .p-exclusions{margin:0 12px 14px;}
+    .excl-grid{gap:6px;}
+    .charts-grid, .cost-grid{grid-template-columns:1fr !important;}
+
+    /* Tables: horizontal scroll */
+    .block .tableWrap, #rolesBlock, #costBlock, #paymentBlock{
+      overflow-x:auto; -webkit-overflow-scrolling:touch;
+    }
+    table.rtable, table.costtable, table.paytable{
+      min-width:640px;
+    }
+    table.rtable input.cellnum{width:40px; font-size:14px; min-height:36px;}
+    table.rtable input.cellname{font-size:14px; min-height:36px;}
+
+    /* Cover page */
+    .cover{flex-direction:column;}
+    .cov-right{min-height:180px;}
+    .cov-right .cov-photo{clip-path:none; width:100%; height:180px; object-fit:cover;}
+    .cov-right .cov-diag{display:none;}
+
+    /* Login */
+    .loginCard{width:min(400px, 94vw); padding:22px 18px 18px; max-height:92vh; overflow-y:auto;}
+    .loginCard input{font-size:16px; min-height:44px;}
+  }
+
+  @media (max-width: 600px){
+    .p-sections{grid-template-columns:1fr !important;}
+    .menuToggle{width:48px; height:48px;}
+  }
+
 </style>
 </head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -692,8 +833,13 @@ Any steel sections or grades not specifically mentioned</textarea>
       <label style="display:flex;align-items:center;margin-top:8px;"><input type="checkbox" id="slideCharts" checked onchange="applySlideSelection()" style="width:auto;margin-right:8px;">Monthly Analytics (4 charts)</label>
       <label style="display:flex;align-items:center;margin-top:8px;"><input type="checkbox" id="slideCost" checked onchange="applySlideSelection()" style="width:auto;margin-right:8px;">Cost Weighting (money by scope)</label>
       <label style="display:flex;align-items:center;margin-top:8px;"><input type="checkbox" id="slidePayment" checked onchange="applySlideSelection()" style="width:auto;margin-right:8px;">Payment Plan & Milestones</label>
-      <button class="miniBtn" id="exportPdfBtn" style="background:var(--orange);width:100%;margin-top:12px;" onclick="exportSelectedPDF()">⬇ Export Selected to PDF</button>
-      <p class="hint" style="margin:8px 0 0;">On phones: if export fails or stays blank, use <b>Print / Save as PDF</b> below (works more reliably on iOS &amp; Android). Export works best on a computer.</p>
+      <button class="miniBtn" id="exportPdfBtn" style="background:var(--orange);width:100%;margin-top:12px;" onclick="exportSelectedPDF()">⬇ Export Selected to PDF (screen capture)</button>
+      <button class="miniBtn" id="printPdfBtn" style="background:var(--teal);width:100%;margin-top:8px;" onclick="printEverything()">🖨 Print / Save as PDF (recommended on phone)</button>
+      <p class="hint" style="margin:8px 0 0;">
+        <b>Two ways to get a PDF:</b><br>
+        1) <b>Print / Save as PDF</b> — best on phones (uses the browser, no blank pages).<br>
+        2) <b>Export Selected</b> — screen capture (works best on computer).
+      </p>
     </details>
 
     <button class="genBtn" onclick="render(); renderExtras();">⟳ Generate Dashboard</button>
@@ -2227,7 +2373,6 @@ function isMobileDevice(){
 
 function downloadPdfBlob(pdf, filename){
   try {
-    // Prefer blob + anchor (more reliable on iOS/Android than pdf.save)
     const blob = pdf.output('blob');
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2240,23 +2385,48 @@ function downloadPdfBlob(pdf, filename){
     setTimeout(function(){
       try { document.body.removeChild(a); } catch(e){}
       try { URL.revokeObjectURL(url); } catch(e){}
-    }, 2500);
-    // iOS Safari often ignores download — open in new tab as fallback
+    }, 3000);
     if(isMobileDevice()){
       setTimeout(function(){
-        // If still on page, offer open
-        try {
-          const w = window.open(url, '_blank');
-          if(!w){
-            alert('PDF is ready. If it did not download, allow pop-ups or use «Print / Save as PDF» instead.');
-          }
-        } catch(e){}
-      }, 400);
+        try { window.open(url, '_blank'); } catch(e){}
+      }, 350);
     }
   } catch(err){
-    // Last resort
-    pdf.save(filename);
+    try { pdf.save(filename); } catch(e2){ console.error(e2); }
   }
+}
+
+function waitMs(ms){
+  return new Promise(function(res){ setTimeout(res, ms); });
+}
+
+/** Clone block into a desktop-width off-screen host so mobile layout does not blank the canvas */
+function buildCaptureClone(el){
+  const host = document.createElement('div');
+  host.id = 'pdfCaptureHost';
+  host.setAttribute('style',
+    'position:fixed;left:0;top:0;width:1100px;max-width:1100px;background:#ffffff;'+
+    'z-index:99999;opacity:1;pointer-events:none;overflow:visible;'+
+    'transform:none;box-sizing:border-box;padding:0;margin:0;'
+  );
+  const clone = el.cloneNode(true);
+  clone.classList.remove('slide-hidden');
+  clone.style.display = 'block';
+  clone.style.visibility = 'visible';
+  clone.style.opacity = '1';
+  clone.style.width = '1100px';
+  clone.style.maxWidth = '1100px';
+  clone.style.margin = '0';
+  clone.style.transform = 'none';
+  clone.style.position = 'relative';
+  // expand tables
+  clone.querySelectorAll('table').forEach(function(t){
+    t.style.minWidth = '0';
+    t.style.width = '100%';
+  });
+  host.appendChild(clone);
+  document.body.appendChild(host);
+  return { host: host, clone: clone };
 }
 
 function exportSelectedPDF(){
@@ -2280,46 +2450,41 @@ function exportSelectedPDF(){
   }
 
   const btn = document.getElementById('exportPdfBtn');
-  const origText = btn.textContent;
-  btn.textContent = isMobileDevice() ? '⏳ Building (phone)…' : '⏳ Building PDF...';
-  btn.disabled = true;
+  const origText = btn ? btn.textContent : 'Export';
+  if(btn){ btn.textContent = '⏳ Building PDF...'; btn.disabled = true; }
 
-  const mobile = isMobileDevice();
-  // Phones: lower scale to avoid memory crash; fewer simultaneous pixels
-  const scale = mobile ? 1.25 : 2;
+  try { if(typeof closeEditor === 'function') closeEditor(); } catch(e){}
+
+  // Same criteria as last_bids_dashboard:
+  // scale:2, JPEG 0.95, page size = canvas + margin, orientation from aspect
   const { jsPDF } = window.jspdf;
-  const pxToPt = px => px * 0.75;
-  const margin = mobile ? 12 : 24;
+  const pxToPt = px => px * 0.75; // 96dpi -> 72dpi
+  const margin = 24;
   let pdf = null;
 
   let chain = Promise.resolve();
   targets.forEach((el, idx)=>{
     chain = chain.then(()=>{
-      const restoreAll = prepareForCapture(el);
-      // html2canvas snapshots relative to the page's current scroll position.
-      // On mobile, if the page had been scrolled (very likely — the export
-      // button sits below the content), that offset gets baked into the
-      // capture and crops the result down to a thin sliver. Telling it the
-      // real scroll offset (so it renders as if scrolled to 0,0) and giving
-      // it the element's own top-left as the capture origin fixes that.
-      const rect = el.getBoundingClientRect();
-      return html2canvas(el, {
-        scale: scale,
+      // Prefer direct capture (last_bids style). On mobile, use off-screen clone if element is tiny.
+      const mobile = isMobileDevice();
+      let captureEl = el;
+      let pack = null;
+      if(mobile){
+        pack = buildCaptureClone(el);
+        captureEl = pack.clone;
+      }
+      const restoreAll = prepareForCapture(captureEl);
+      return html2canvas(captureEl, {
+        scale: 2,
         backgroundColor: '#ffffff',
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        windowWidth: el.scrollWidth,
-        windowHeight: el.scrollHeight,
-        scrollX: -window.scrollX,
-        scrollY: -window.scrollY,
-        x: rect.left + window.scrollX,
-        y: rect.top + window.scrollY
+        useCORS: true
       }).then(canvas=>{
         restoreAll();
+        if(pack){ try { pack.host.remove(); } catch(e){} }
         return canvas;
       }).catch(err=>{
         restoreAll();
+        if(pack){ try { pack.host.remove(); } catch(e){} }
         throw err;
       });
     }).then(canvas=>{
@@ -2331,10 +2496,11 @@ function exportSelectedPDF(){
       } else {
         pdf.addPage([pageWpt, pageHpt], orientation);
       }
-      // JPEG is lighter on mobile memory than PNG
-      const img = canvas.toDataURL('image/jpeg', mobile ? 0.82 : 0.95);
-      pdf.addImage(img, 'JPEG', pxToPt(margin), pxToPt(margin), pxToPt(canvas.width), pxToPt(canvas.height));
-      // Help GC on phones
+      pdf.addImage(
+        canvas.toDataURL('image/jpeg', 0.95), 'JPEG',
+        pxToPt(margin), pxToPt(margin),
+        pxToPt(canvas.width), pxToPt(canvas.height)
+      );
       try { canvas.width = 0; canvas.height = 0; } catch(e){}
     });
   });
@@ -2342,29 +2508,33 @@ function exportSelectedPDF(){
   chain.then(()=>{
     const projCode = (document.getElementById('projCode')||{}).value || 'project';
     const filename = `${projCode.replace(/[^a-z0-9]+/gi,'_')}_execution_plan.pdf`;
-    downloadPdfBlob(pdf, filename);
-    btn.textContent = origText;
-    btn.disabled = false;
-    if(mobile){
-      btn.textContent = '✓ PDF ready — check Downloads / new tab';
-      setTimeout(function(){ btn.textContent = origText; }, 4000);
+    if(typeof downloadPdfBlob === 'function'){
+      downloadPdfBlob(pdf, filename);
+    } else {
+      pdf.save(filename);
     }
+    if(btn){ btn.textContent = origText; btn.disabled = false; }
   }).catch(err=>{
     console.error(err);
-    btn.textContent = origText;
-    btn.disabled = false;
-    const msg = (err && err.message) ? err.message : String(err);
-    alert('PDF export failed on this device.\\n\\nTip: select fewer slides, or use «Print / Save as PDF».\\n\\n' + msg);
+    if(btn){ btn.textContent = origText; btn.disabled = false; }
+    alert('PDF export failed: ' + (err && err.message ? err.message : err));
   });
 }
 
 function printEverything(){
-  ['coverBlock','poster','rolesBlock','chartsBlock','costBlock','paymentBlock'].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) el.classList.remove('slide-hidden');
-  });
+  // Use selected slides only (same checkboxes as Export)
+  try { if(typeof closeEditor === 'function') closeEditor(); } catch(e){}
+  try { if(typeof applySlideSelection === 'function') applySlideSelection(); } catch(e){}
   fixPageBreaks();
-  setTimeout(()=> window.print(), 50);
+  // Small delay so layout settles (important on phones)
+  setTimeout(function(){
+    window.print();
+  }, 200);
+}
+
+/** Phone-friendly alias: same as print */
+function savePdfViaPrint(){
+  printEverything();
 }
 
 /* ---------- render poster ---------- */
@@ -2692,12 +2862,17 @@ async function doLogin(){
     localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(currentUser));
     hideLogin();
     updateUserBar();
-    await restoreOnLoad();
+    const restored = await restoreOnLoad();
+    // First login / no session → must paint the dashboard
+    if(!restored){
+      render();
+      renderExtras();
+      applySlideSelection();
+    }
     await refreshHistoryList();
     // If project code entered on login → open that project
     if(code){
-      const ok = await openProjectByCode(code, true);
-      if(!ok && err){ /* status already set */ }
+      await openProjectByCode(code, true);
     }
   } catch(e){
     console.error(e);
@@ -3166,11 +3341,14 @@ async function bootAuth(){
         return;
       }
     }
+    // Build default dashboard behind the login gate so it is ready after sign-in
+    try { render(); renderExtras(); applySlideSelection(); } catch(e){}
     showLogin();
   } catch(err){
     console.error('DB boot failed', err);
     // Fallback: allow use without DB
     hideLogin();
+    try { render(); renderExtras(); applySlideSelection(); } catch(e){}
     updateHistoryStatus('Local DB unavailable — working without accounts.');
   }
 }
@@ -3215,14 +3393,30 @@ if(_genBtn){
   var edgeGrip = document.getElementById('editorEdgeGrip');
   var menuToggle = document.getElementById('menuToggle');
   var OPEN_WIDTH = 420;
+  var overlay = document.getElementById('editorOverlay');
+
+  function isMobile(){
+    return window.innerWidth <= 900 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  }
 
   function targetWidth(){
+    if(isMobile()) return Math.min(400, window.innerWidth * 0.94);
     return Math.min(OPEN_WIDTH, window.innerWidth * 0.88);
   }
 
   function positionToggle(open){
-    // Vertically centered (CSS). Horizontally: left edge when closed, panel edge when open.
+    // Clear inline overrides that fight CSS on mobile
+    if(isMobile()){
+      menuToggle.style.left = '';
+      menuToggle.style.right = '';
+      menuToggle.style.top = '';
+      menuToggle.style.bottom = '';
+      menuToggle.style.transform = '';
+      return;
+    }
     menuToggle.style.left = (open ? targetWidth() - 20 : 16) + 'px';
+    menuToggle.style.right = '';
+    menuToggle.style.bottom = '';
   }
 
   window.openEditor = function(){
@@ -3295,23 +3489,31 @@ if(_genBtn){
     if(curWidth > panelWidth * 0.5){ openEditor(); } else { closeEditor(); }
   }
 
-  // touch events (mobile/tablet)
-  var INTERACTIVE_SEL = 'input, textarea, select, button, summary, a, label, option, .miniBtn, .genBtn';
-  function onTouchStart(e){ var t = e.touches[0]; dragStart(t.clientX, t.clientY); }
-  function onTouchMove(e){ var t = e.touches[0]; dragMove(t.clientX, t.clientY, e); }
-  function onTouchEnd(){ dragEnd(false); }
-  // Same as onTouchStart, but skips drag-initiation when the touch starts on a
-  // form control or other interactive element, so taps/typing on inputs,
-  // textareas, selects, and buttons inside the editor work normally on mobile.
-  function onEditorTouchStart(e){
-    if(e.target && e.target.closest && e.target.closest(INTERACTIVE_SEL)) return;
-    var t = e.touches[0]; dragStart(t.clientX, t.clientY);
+  // touch events (mobile/tablet) — ignore when interacting with form fields
+  function isFormTarget(el){
+    if(!el || !el.tagName) return false;
+    var tag = el.tagName.toUpperCase();
+    if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || tag === 'LABEL') return true;
+    if(el.isContentEditable) return true;
+    if(el.closest && el.closest('input, textarea, select, button, label, .repeatItem')) return true;
+    return false;
   }
+  function onTouchStart(e){
+    if(isFormTarget(e.target)) return;
+    var t = e.touches[0];
+    dragStart(t.clientX, t.clientY);
+  }
+  function onTouchMove(e){
+    if(!dragging) return;
+    var t = e.touches[0];
+    dragMove(t.clientX, t.clientY, e);
+  }
+  function onTouchEnd(){ dragEnd(false); }
 
   edgeGrip.addEventListener('touchstart', onTouchStart, {passive:true});
   edgeGrip.addEventListener('touchmove', onTouchMove, {passive:false});
   edgeGrip.addEventListener('touchend', onTouchEnd);
-  editor.addEventListener('touchstart', onEditorTouchStart, {passive:true});
+  editor.addEventListener('touchstart', onTouchStart);
   editor.addEventListener('touchmove', onTouchMove, {passive:false});
   editor.addEventListener('touchend', onTouchEnd);
 
