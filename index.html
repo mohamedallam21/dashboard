@@ -440,8 +440,7 @@
       transform:scale(1.05);
     }
     body.panel-open .menuToggle{
-      left:auto; right:12px;
-      /* sits on the right edge of open panel area */
+      /* positioned via JS (positionToggle) to track the drawer's edge */
     }
     .editorEdgeGrip{width:12px;}
 
@@ -3422,18 +3421,17 @@ if(_genBtn){
   }
 
   function positionToggle(open){
-    // On mobile, explicitly pin the button to the right edge when the
-    // drawer is open and the left edge when closed. (Previously this just
-    // cleared inline styles and let CSS decide, but the drag handlers
-    // below set an inline "left" during swipes that could stick around
-    // and keep the button on the left even while the panel was open.)
+    // On mobile, pin the button to the edge of the drawer itself so it
+    // reads as a "swipe handle" attached to the panel: sitting just past
+    // the drawer's right edge when open, and at the screen's left edge
+    // when closed.
     if(isMobile()){
       menuToggle.style.top = '';
       menuToggle.style.bottom = '';
       menuToggle.style.transform = '';
       if(open){
-        menuToggle.style.left = 'auto';
-        menuToggle.style.right = '12px';
+        menuToggle.style.right = 'auto';
+        menuToggle.style.left = (targetWidth() - 20) + 'px';
       } else {
         menuToggle.style.left = '10px';
         menuToggle.style.right = '';
@@ -3516,8 +3514,9 @@ if(_genBtn){
     editor.classList.add('open');
     editor.style.width = next + 'px';
     editor.style.flexBasis = next + 'px';
-    if(!isMobile()){
-      menuToggle.style.left = Math.max(16, next - 20) + 'px';
+    menuToggle.style.left = Math.max(16, next - 20) + 'px';
+    if(isMobile()){
+      menuToggle.style.right = 'auto';
     }
     if(evt && evt.cancelable) evt.preventDefault();
   }
