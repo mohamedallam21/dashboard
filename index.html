@@ -3533,6 +3533,11 @@ if(_genBtn){
       toggleEditor();
       return;
     }
+    // Plain tap anywhere else (e.g. on a section's summary/header to
+    // expand it) — no drag happened, so leave the drawer's open/close
+    // state alone and let the tap's normal click behavior (like the
+    // native <details> toggle) go through.
+    if(!didMove) return;
     if(curWidth > panelWidth * 0.5){ openEditor(); } else { closeEditor(); }
   }
 
@@ -3542,7 +3547,7 @@ if(_genBtn){
     var tag = el.tagName.toUpperCase();
     if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || tag === 'LABEL') return true;
     if(el.isContentEditable) return true;
-    if(el.closest && el.closest('input, textarea, select, button, label, .repeatItem')) return true;
+    if(el.closest && el.closest('input, textarea, select, button, label, summary, .repeatItem')) return true;
     return false;
   }
   function onTouchStart(e){
